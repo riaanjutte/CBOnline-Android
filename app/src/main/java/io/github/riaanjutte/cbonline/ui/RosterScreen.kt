@@ -12,27 +12,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,6 +35,8 @@ import io.github.riaanjutte.cbonline.data.Coalition
 import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.roster.Roster
 import io.github.riaanjutte.cbonline.roster.RosterRow
+import io.github.riaanjutte.cbonline.ui.brand.BrandHeader
+import io.github.riaanjutte.cbonline.ui.brand.MapBackground
 import io.github.riaanjutte.cbonline.ui.theme.StarColor
 import io.github.riaanjutte.cbonline.ui.theme.color
 import java.util.Date
@@ -59,34 +51,15 @@ fun RosterScreen(
     onDismissUpdate: () -> Unit,
     onOpenUrl: (String) -> Unit
 ) {
-    var menuOpen by remember { mutableStateOf(false) }
-    var aboutOpen by rememberSaveable { mutableStateOf(false) }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                actions = {
-                    Box {
-                        IconButton(onClick = { menuOpen = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options))
-                        }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.about)) },
-                                onClick = { menuOpen = false; aboutOpen = true }
-                            )
-                        }
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = state.isRefreshing,
-            onRefresh = onRefresh,
-            modifier = Modifier.padding(padding).fillMaxSize()
-        ) {
+    Box(Modifier.fillMaxSize()) {
+        MapBackground()
+        Column(Modifier.fillMaxSize()) {
+            BrandHeader(versionName, onOpenUrl)
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.weight(1f).fillMaxWidth()
+            ) {
             val roster = state.roster
             if (roster != null) {
                 RosterList(roster, state, onToggleFriend, onDismissUpdate, onOpenUrl)
@@ -100,10 +73,9 @@ fun RosterScreen(
                     }
                 }
             }
+            }
         }
     }
-
-    if (aboutOpen) AboutDialog(versionName, onOpenUrl) { aboutOpen = false }
 }
 
 @Composable
@@ -171,7 +143,9 @@ private fun ColumnScope.RosterItems(
     nobodyText: String,
     onToggleFriend: (String) -> Unit
 ) {
-    LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 16.dp)) {
+    // Edge-to-edge without a Scaffold: keep the last rows clear of the navigation bar
+    val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 16.dp + navBarBottom)) {
         // Always the first item, even without data, so it's never inserted above the visible list
         item(key = "mission") { MissionCard(mission, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) }
         item(key = "summary") { SummaryCard(roster, updatedTime, Modifier.padding(16.dp)) }
