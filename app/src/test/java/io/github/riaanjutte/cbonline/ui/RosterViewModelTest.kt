@@ -3,6 +3,8 @@ package io.github.riaanjutte.cbonline.ui
 import io.github.riaanjutte.cbonline.MainDispatcherRule
 import io.github.riaanjutte.cbonline.data.Coalition
 import io.github.riaanjutte.cbonline.data.FriendsRepository
+import io.github.riaanjutte.cbonline.data.MissionInfo
+import io.github.riaanjutte.cbonline.data.MissionSource
 import io.github.riaanjutte.cbonline.data.OnlinePlayer
 import io.github.riaanjutte.cbonline.data.PlayersSource
 import io.github.riaanjutte.cbonline.data.UpdateInfo
@@ -23,6 +25,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.io.IOException
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RosterViewModelTest {
@@ -35,6 +38,17 @@ class RosterViewModelTest {
         var calls = 0
         var gate: CompletableDeferred<Unit>? = null
         override suspend fun fetch(): List<OnlinePlayer> {
+            calls++
+            gate?.await()
+            return next()
+        }
+    }
+
+    private class FakeMissions : MissionSource {
+        var next: () -> MissionInfo = { MISSION_A }
+        var calls = 0
+        var gate: CompletableDeferred<Unit>? = null
+        override suspend fun fetch(): MissionInfo {
             calls++
             gate?.await()
             return next()
@@ -65,9 +79,10 @@ class RosterViewModelTest {
     }
 
     private val players = FakePlayers()
+    private val missions = FakeMissions()
     private val friends = FakeFriends()
 
-    private fun vm(updates: UpdateSource = FakeUpdates()) = RosterViewModel(players, friends, updates, "1.0.0")
+    private fun vm(updates: UpdateSource = FakeUpdates()) = RosterViewModel(players, missions, friends, updates, "1.0.0")
 
     private fun TestScope.subscribe(vm: RosterViewModel) =
         backgroundScope.launch { vm.state.collect {} }.also { runCurrent() }
@@ -226,10 +241,97 @@ class RosterViewModelTest {
         assertEquals(0, updates.checks)
     }
 
+    @Test
+    fun `mission present after first load`() = runTest {
+        val vm = vm()
+        subscribe(vm)
+        assertEquals(MISSION_A, vm.state.value.mission)
+        assertEquals(1, missions.calls)
+    }
+
+    @Test
+    fun `each poll and manual refresh fetches each source once`() = runTest {
+        val vm = vm()
+        subscribe(vm)
+        advanceTimeBy(120_001)
+        assertEquals(3, players.calls)
+        assertEquals(3, missions.calls)
+        vm.refresh()
+        runCurrent()
+        assertEquals(4, players.calls)
+        assertEquals(4, missions.calls)
+    }
+
+    @Test
+    fun `mission failure keeps roster and previous mission`() = runTest {
+        val vm = vm()
+        subscribe(vm)
+        missions.next = { throw IOException("HTTP 502") }
+        advanceTimeBy(60_001)
+        val s = vm.state.value
+        assertEquals(MISSION_A, s.mission)
+        assertEquals(2, s.roster!!.total)
+        assertFalse(s.refreshFailed)
+        assertNull(s.errorMessage)
+    }
+
+    @Test
+    fun `roster failure keeps mission`() = runTest {
+        val vm = vm()
+        subscribe(vm)
+        players.next = { throw IOException("HTTP 503") }
+        advanceTimeBy(60_001)
+        assertTrue(vm.state.value.refreshFailed)
+        assertEquals(MISSION_A, vm.state.value.mission)
+    }
+
+    @Test
+    fun `first-load mission failure still shows roster`() = runTest {
+        missions.next = { throw IOException("HTTP 502") }
+        val vm = vm()
+        subscribe(vm)
+        val s = vm.state.value
+        assertEquals(2, s.roster!!.total)
+        assertNull(s.mission)
+        assertNull(s.errorMessage)
+        assertFalse(s.isLoading)
+    }
+
+    @Test
+    fun `first-load roster failure still shows mission`() = runTest {
+        players.next = { throw IOException("HTTP 503") }
+        val vm = vm()
+        subscribe(vm)
+        assertEquals("HTTP 503", vm.state.value.errorMessage)
+        assertEquals(MISSION_A, vm.state.value.mission)
+    }
+
+    @Test
+    fun `slow mission does not delay roster`() = runTest {
+        missions.gate = CompletableDeferred() // never completed: the mission fetch hangs
+        val vm = vm()
+        subscribe(vm)
+        val s = vm.state.value
+        assertEquals(2, s.roster!!.total)
+        assertFalse(s.isLoading)
+        assertNull(s.mission)
+    }
+
+    @Test
+    fun `new mission replaces the previous one`() = runTest {
+        val vm = vm()
+        subscribe(vm)
+        missions.next = { MISSION_B }
+        advanceTimeBy(60_001)
+        assertEquals(MISSION_B, vm.state.value.mission)
+    }
+
     private companion object {
         val TWO_PLAYERS = listOf(
             OnlinePlayer("Alpha", Coalition.Allied, "00:12"),
             OnlinePlayer("Bravo", Coalition.Axis, "01:05")
         )
+        val MISSION_A = MissionInfo("Mission A", null, Instant.parse("2026-10-04T00:42:00Z"), null, null)
+        val MISSION_B = MissionInfo("Mission B", null, Instant.parse("2026-10-04T03:42:00Z"), null, null)
     }
 }

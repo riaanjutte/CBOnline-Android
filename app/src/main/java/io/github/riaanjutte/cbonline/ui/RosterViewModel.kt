@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.riaanjutte.cbonline.data.FriendsRepository
+import io.github.riaanjutte.cbonline.data.MissionInfo
+import io.github.riaanjutte.cbonline.data.MissionSource
 import io.github.riaanjutte.cbonline.data.OnlinePlayer
 import io.github.riaanjutte.cbonline.data.PlayersSource
 import io.github.riaanjutte.cbonline.data.UpdateInfo
@@ -11,6 +13,7 @@ import io.github.riaanjutte.cbonline.data.UpdateSource
 import io.github.riaanjutte.cbonline.roster.Roster
 import io.github.riaanjutte.cbonline.roster.RosterBuilder
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,11 +36,14 @@ data class RosterUiState(
     val refreshFailed: Boolean = false,
     /** Set only when there is no roster to show. */
     val errorMessage: String? = null,
-    val update: UpdateInfo? = null
+    val update: UpdateInfo? = null,
+    /** Last good mission info; independent of the roster's error state. */
+    val mission: MissionInfo? = null
 )
 
 class RosterViewModel(
     private val players: PlayersSource,
+    private val missions: MissionSource,
     private val friends: FriendsRepository,
     private val updates: UpdateSource,
     private val currentVersion: String
@@ -56,6 +62,7 @@ class RosterViewModel(
 
     private val fetchState = MutableStateFlow(FetchState())
     private val updateState = MutableStateFlow<UpdateInfo?>(null)
+    private val missionState = MutableStateFlow<MissionInfo?>(null)
     private val manualRefresh = Channel<Unit>(Channel.CONFLATED)
     private var updateChecked = false
 
@@ -68,7 +75,7 @@ class RosterViewModel(
                 manual = withTimeoutOrNull(REFRESH_INTERVAL_MS) { manualRefresh.receive() } != null
             }
         }
-        combine(fetchState, friends.friends, updateState, ::toUiState).collect { send(it) }
+        combine(fetchState, friends.friends, updateState, missionState, ::toUiState).collect { send(it) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RosterUiState())
 
     fun refresh() {
@@ -101,6 +108,28 @@ class RosterViewModel(
             it.copy(inFlight = true, isLoading = it.players == null, isRefreshing = manual && it.players != null)
         }
         try {
+            coroutineScope { // both run concurrently; each updates its own state as soon as it finishes
+                launch { fetchMission() }
+                fetchRoster() // catches its own failures, so it never cancels the mission fetch
+            }
+        } finally {
+            fetchState.update { it.copy(inFlight = false, isRefreshing = false) }
+        }
+    }
+
+    /** Keeps the last good mission on any failure; mission problems never touch the roster's state. */
+    private suspend fun fetchMission() {
+        try {
+            missionState.value = missions.fetch()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("CBOnline", "Mission info fetch failed", e)
+        }
+    }
+
+    private suspend fun fetchRoster() {
+        try {
             val result = players.fetch()
             fetchState.update {
                 it.copy(players = result, lastUpdated = Instant.now(), isLoading = false, refreshFailed = false, errorMessage = null)
@@ -116,19 +145,18 @@ class RosterViewModel(
                 if (it.players != null) it.copy(isLoading = false, refreshFailed = true)
                 else it.copy(isLoading = false, errorMessage = e.message ?: e::class.simpleName)
             }
-        } finally {
-            fetchState.update { it.copy(inFlight = false, isRefreshing = false) }
         }
     }
 
-    private fun toUiState(fetch: FetchState, friendNames: Set<String>, update: UpdateInfo?) = RosterUiState(
+    private fun toUiState(fetch: FetchState, friendNames: Set<String>, update: UpdateInfo?, mission: MissionInfo?) = RosterUiState(
         roster = fetch.players?.let { RosterBuilder.build(it, friendNames) },
         lastUpdated = fetch.lastUpdated,
         isLoading = fetch.isLoading,
         isRefreshing = fetch.isRefreshing,
         refreshFailed = fetch.refreshFailed,
         errorMessage = fetch.errorMessage,
-        update = update
+        update = update,
+        mission = mission
     )
 
     private companion object {

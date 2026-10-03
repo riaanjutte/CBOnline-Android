@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity() {
                         initializer {
                             RosterViewModel(
                                 container.playersApi,
+                                container.missionApi,
                                 container.friendsStore,
                                 container.updateChecker,
                                 BuildConfig.VERSION_NAME
