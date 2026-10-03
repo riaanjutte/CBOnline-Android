@@ -88,15 +88,16 @@ fun RosterScreen(
             modifier = Modifier.padding(padding).fillMaxSize()
         ) {
             val roster = state.roster
-            when {
-                roster != null -> RosterList(roster, state, onToggleFriend, onDismissUpdate, onOpenUrl)
-                state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-                // A failed roster load must not hide the mission (it comes from a different source)
-                else -> Column(Modifier.fillMaxSize()) {
+            if (roster != null) {
+                RosterList(roster, state, onToggleFriend, onDismissUpdate, onOpenUrl)
+            } else {
+                // No roster yet, loading or failed: the mission comes from a different source, so keep it
+                // on screen — including during each retry, which would otherwise flash a bare spinner
+                Column(Modifier.fillMaxSize()) {
                     if (state.mission != null) MissionCard(state.mission, Modifier.padding(16.dp))
-                    Box(Modifier.weight(1f)) { LoadError(state.errorMessage, onRefresh) }
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        if (state.isLoading) CircularProgressIndicator() else LoadError(state.errorMessage, onRefresh)
+                    }
                 }
             }
         }

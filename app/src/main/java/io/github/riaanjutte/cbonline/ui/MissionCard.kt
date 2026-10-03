@@ -12,12 +12,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.riaanjutte.cbonline.R
 import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.data.Weather
@@ -25,7 +28,7 @@ import io.github.riaanjutte.cbonline.roster.inGameLabel
 import io.github.riaanjutte.cbonline.roster.keepPartsTogether
 import io.github.riaanjutte.cbonline.roster.timeLeftLabel
 import io.github.riaanjutte.cbonline.roster.weatherLine
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.Date
@@ -38,13 +41,12 @@ fun MissionCard(mission: MissionInfo?, modifier: Modifier = Modifier) {
         Spacer(modifier.height(1.dp))
         return
     }
-    // Local clock for the countdown; ticks only while the card is on screen, never fetches
-    val now by produceState(Instant.now()) {
-        while (true) {
-            delay(30_000)
-            value = Instant.now()
-        }
+    // Local clock for the countdown: ticks while the screen is started, restarts fresh on return, never fetches
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val clock = remember(lifecycle) {
+        tickingClock(lifecycle.currentStateFlow.map { it.isAtLeast(Lifecycle.State.STARTED) }, Instant::now)
     }
+    val now by clock.collectAsState(initial = Instant.now())
     val context = LocalContext.current
     ElevatedCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
