@@ -1,0 +1,8 @@
+{"generated_at":"2026-10-03T21:42:02Z","server":"tempest",
+ "mission":{"name":"Crimean Resolve (Dec. 1944)","historical_start":"1944-12-02T14:00:00","started_at":"2026-10-03T21:42:00Z","estimated_end":"2026-10-04T00:42:00Z"},
+ "weather":{"temperature_c":1,"pressure_mmhg":780,"pressure_hpa":1039.9,"turbulence":1,"cloud_base_m":1900,"cloud_top_m":4900,"cloud_cover":"Heavy","precip_level":0,"precip_type":null,
+  "wind_layers":[{"altitude_m":0,"direction_to_deg":340,"direction_from_deg":160,"speed_ms":3},{"altitude_m":500,"direction_to_deg":330,"direction_from_deg":150,"speed_ms":4},{"altitude_m":1000,"direction_to_deg":320,"direction_from_deg":140,"speed_ms":5},{"altitude_m":2000,"direction_to_deg":300,"direction_from_deg":120,"speed_ms":6},{"altitude_m":5000,"direction_to_deg":280,"direction_from_deg":100,"speed_ms":8}]},
+ "next_mission":{"name":"Mitchell's Men (Mar. 1945)","path":"Dogfight/Alonzo/Mitchells_Men/Mitchells_Men_Mar_1945","expected_start":"2026-10-04T00:42:00Z","historical_start":"1945-03-05T09:00:00","weather_state":"prepared",
+  "weather":{"temperature_c":-15,"pressure_mmhg":760,"pressure_hpa":1013.2,"turbulence":0.9,"cloud_base_m":3500,"cloud_top_m":9500,"cloud_cover":"Heavy","precip_level":0,"precip_type":null,
+   "wind_layers":[{"altitude_m":0,"direction_to_deg":100,"direction_from_deg":280,"speed_ms":4},{"altitude_m":500,"direction_to_deg":90,"direction_from_deg":270,"speed_ms":5},{"altitude_m":1000,"direction_to_deg":80,"direction_from_deg":260,"speed_ms":6},{"altitude_m":2000,"direction_to_deg":70,"direction_from_deg":250,"speed_ms":6},{"altitude_m":5000,"direction_to_deg":60,"direction_from_deg":240,"speed_ms":4}]},
+  "artifact_sha256":"22e60aafde2e92682eaa98a0d0fbb59491714cd5b5a94ba4d802a91724816354"}}

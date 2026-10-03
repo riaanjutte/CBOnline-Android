@@ -11,6 +11,9 @@ val (vMajor, vMinor, vPatch) = appVersion.split(".").map(String::toInt)
 val realApiBaseUrl = "https://il2statsapi.combatbox.net"
 // Test hook (debug only): -Pcbonline.apiBaseUrl=... points the debug build at another host
 val debugApiBaseUrl = providers.gradleProperty("cbonline.apiBaseUrl").getOrElse(realApiBaseUrl)
+val realMissionUrl = "https://campaign-data.combatbox.net/mission-info-tempest.json"
+// Test hook (debug only): -Pcbonline.missionUrl=... points the debug build's mission card elsewhere
+val debugMissionUrl = providers.gradleProperty("cbonline.missionUrl").getOrElse(realMissionUrl)
 
 // Release signing: real key from git-ignored keystore.properties; otherwise unsigned,
 // unless -Pcbonline.debugSignRelease=true (local testing only, never publish that APK)
@@ -42,9 +45,11 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
+            buildConfigField("String", "MISSION_URL", "\"$debugMissionUrl\"")
         }
         release {
             buildConfigField("String", "API_BASE_URL", "\"$realApiBaseUrl\"")
+            buildConfigField("String", "MISSION_URL", "\"$realMissionUrl\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

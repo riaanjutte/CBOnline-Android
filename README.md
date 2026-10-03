@@ -76,4 +76,5 @@ The repository must be **public** for the in-app update check to work. The app r
 These are for local testing. **Never publish an APK built with them.**
 
 - `-Pcbonline.apiBaseUrl=<url>` points a *debug* build at another host. For example, `http://127.0.0.1:9` shows the error screen. Release builds always use the real API.
+- `-Pcbonline.missionUrl=<url>` points a *debug* build's mission card at another file (e.g. a local fake). Release builds always use the real file.
 - `-Pcbonline.debugSignRelease=true` signs a *release* build with the debug key, so the shrunk (R8) build can be installed and checked on a device.
