@@ -21,6 +21,8 @@ data class Roster(
     /** Starred display names with no matching online player. */
     val friendsOffline: List<String>,
     val starredCount: Int,
+    /** Starred names with at least one online match; one star can match several rows. */
+    val friendsOnlineCount: Int,
     val axis: List<RosterRow>,
     val allied: List<RosterRow>,
     val unassigned: List<RosterRow>
@@ -38,14 +40,16 @@ object RosterBuilder {
         val axis = rows.filter { it.coalition == Coalition.Axis }
         val allied = rows.filter { it.coalition == Coalition.Allied }
         val unassigned = rows.filter { it.coalition == Coalition.Unassigned }
+        val friendsOffline = friends.filter { friendKey(it) !in onlineKeys }.sortedWith(String.CASE_INSENSITIVE_ORDER)
         return Roster(
             total = rows.size,
             axisCount = axis.size,
             alliedCount = allied.size,
             unassignedCount = unassigned.size,
             friendsOnline = rows.filter { it.isFriend },
-            friendsOffline = friends.filter { friendKey(it) !in onlineKeys }.sortedWith(String.CASE_INSENSITIVE_ORDER),
+            friendsOffline = friendsOffline,
             starredCount = friends.size,
+            friendsOnlineCount = friends.size - friendsOffline.size,
             axis = axis,
             allied = allied,
             unassigned = unassigned

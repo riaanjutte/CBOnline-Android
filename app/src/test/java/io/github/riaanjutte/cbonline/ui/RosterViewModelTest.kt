@@ -43,7 +43,9 @@ class RosterViewModelTest {
 
     private class FakeFriends : FriendsRepository {
         override val friends = MutableStateFlow(emptySet<String>())
+        var failWrites = false
         override suspend fun toggle(nickname: String) {
+            if (failWrites) throw IOException("disk full")
             friends.value = if (nickname in friends.value) friends.value - nickname else friends.value + nickname
         }
     }
@@ -51,11 +53,13 @@ class RosterViewModelTest {
     private class FakeUpdates(private val info: UpdateInfo? = null) : UpdateSource {
         var checks = 0
         var dismissed: String? = null
+        var failDismiss = false
         override suspend fun check(currentVersion: String): UpdateInfo? {
             checks++
             return info
         }
         override suspend fun dismiss(version: String) {
+            if (failDismiss) throw IOException("disk full")
             dismissed = version
         }
     }
@@ -192,6 +196,26 @@ class RosterViewModelTest {
         runCurrent()
         assertNull(vm.state.value.update)
         assertEquals("1.1.0", updates.dismissed)
+    }
+
+    @Test
+    fun `failed friend write does not crash`() = runTest {
+        val vm = vm()
+        subscribe(vm)
+        friends.failWrites = true
+        vm.toggleFriend("Alpha")
+        runCurrent()
+        assertTrue(vm.state.value.roster!!.friendsOnline.isEmpty())
+    }
+
+    @Test
+    fun `failed dismiss write does not crash and still hides the banner`() = runTest {
+        val updates = FakeUpdates(UpdateInfo("1.1.0", "u")).apply { failDismiss = true }
+        val vm = vm(updates)
+        subscribe(vm)
+        vm.dismissUpdate()
+        runCurrent()
+        assertNull(vm.state.value.update)
     }
 
     @Test

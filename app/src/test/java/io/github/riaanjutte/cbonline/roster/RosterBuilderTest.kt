@@ -73,6 +73,15 @@ class RosterBuilderTest {
     }
 
     @Test
+    fun `online friend count counts stars, not rows`() {
+        // one star matching two rows (reconnect ghost / case variant) is still one friend online
+        val r = RosterBuilder.build(listOf(p("Bob", Axis), p("BOB", Allied), p("Carol", Axis)), setOf("bob", "Dave"))
+        assertEquals(2, r.friendsOnline.size)
+        assertEquals(1, r.friendsOnlineCount)
+        assertEquals(2, r.starredCount)
+    }
+
+    @Test
     fun `symbol-heavy names sort predictably`() {
         val r = RosterBuilder.build(
             listOf(p("ace", Allied), p("Øystein", Allied), p("[CB]Ace", Allied), p("=JG52=Hans", Allied)),

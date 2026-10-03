@@ -4,6 +4,7 @@ import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -137,19 +138,33 @@ private fun RosterList(
     val staleText = updatedTime?.let { stringResource(R.string.refresh_failed, it) }
     val nobodyText = stringResource(R.string.nobody_flying)
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
+    // Banner and stale strip sit above the list, not in it: items inserted above a keyed
+    // LazyColumn's first visible item land off-screen, and both arrive after the list is shown
+    Column(Modifier.fillMaxSize()) {
         state.update?.let { info ->
-            item(key = "update") {
-                UpdateBanner(info, onDownload = { onOpenUrl(info.url) }, onDismiss = onDismissUpdate)
-            }
+            UpdateBanner(info, onDownload = { onOpenUrl(info.url) }, onDismiss = onDismissUpdate)
         }
         if (state.refreshFailed && staleText != null) {
-            item(key = "stale") {
-                Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
-                    Text(staleText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp, 8.dp))
-                }
+            Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
+                Text(staleText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp, 8.dp))
             }
         }
+        RosterItems(roster, updatedTime, friendsTitle, axisTitle, alliedTitle, unassignedTitle, nobodyText, onToggleFriend)
+    }
+}
+
+@Composable
+private fun ColumnScope.RosterItems(
+    roster: Roster,
+    updatedTime: String?,
+    friendsTitle: String,
+    axisTitle: String,
+    alliedTitle: String,
+    unassignedTitle: String,
+    nobodyText: String,
+    onToggleFriend: (String) -> Unit
+) {
+    LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 16.dp)) {
         item(key = "summary") { SummaryCard(roster, updatedTime, Modifier.padding(16.dp)) }
         if (roster.total == 0) {
             item(key = "nobody") {

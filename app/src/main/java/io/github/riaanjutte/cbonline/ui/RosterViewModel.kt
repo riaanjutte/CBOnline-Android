@@ -1,5 +1,6 @@
 package io.github.riaanjutte.cbonline.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.riaanjutte.cbonline.data.FriendsRepository
@@ -75,13 +76,24 @@ class RosterViewModel(
     }
 
     fun toggleFriend(nickname: String) {
-        viewModelScope.launch { friends.toggle(nickname) }
+        viewModelScope.launch { persist("Saving friend failed") { friends.toggle(nickname) } }
     }
 
     fun dismissUpdate() {
         val info = updateState.value ?: return
         updateState.value = null
-        viewModelScope.launch { updates.dismiss(info.version) }
+        viewModelScope.launch { persist("Saving dismissal failed") { updates.dismiss(info.version) } }
+    }
+
+    /** A failed local write (disk full, corrupt file) must not crash the app; the change just isn't kept. */
+    private suspend fun persist(failure: String, write: suspend () -> Unit) {
+        try {
+            write()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("CBOnline", failure, e)
+        }
     }
 
     private suspend fun fetchOnce(manual: Boolean) {

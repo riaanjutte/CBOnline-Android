@@ -39,7 +39,7 @@ fun SummaryCard(roster: Roster, updatedTime: String?, modifier: Modifier = Modif
             )
             if (roster.starredCount > 0) {
                 Text(
-                    stringResource(R.string.friends_online, roster.friendsOnline.size, roster.starredCount),
+                    stringResource(R.string.friends_online, roster.friendsOnlineCount, roster.starredCount),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
