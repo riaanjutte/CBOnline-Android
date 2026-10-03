@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground>
+        <!-- 18% inset keeps the hexagon inside the 66dp safe circle -->
+        <inset
+            android:drawable="@drawable/cb_logo"
+            android:inset="18%" />
+    </foreground>
+</adaptive-icon>
