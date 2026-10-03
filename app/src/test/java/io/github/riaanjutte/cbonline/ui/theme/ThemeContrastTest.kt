@@ -5,7 +5,11 @@ import androidx.compose.ui.graphics.luminance
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** WCAG AA for normal-size text: primary-coloured text (TextButtons, links) must reach 4.5:1. */
+/**
+ * WCAG AA for normal-size text: every brand colour used as text must reach 4.5:1 on what it sits on.
+ * Panels over the map are 94 % opaque and the map is darker than the panel, so testing against the
+ * opaque panel colour is the worst case.
+ */
 class ThemeContrastTest {
 
     private fun contrast(a: Color, b: Color): Float {
@@ -19,16 +23,28 @@ class ThemeContrastTest {
     }
 
     @Test
-    fun `dark theme primary text is legible where the app uses it`() {
-        assertLegible("primary on surface", DarkColors.primary, DarkColors.surface)
-        assertLegible("primary on dialog (surfaceContainerHigh)", DarkColors.primary, DarkColors.surfaceContainerHigh)
-        assertLegible("primary on update banner (secondaryContainer)", DarkColors.primary, DarkColors.secondaryContainer)
-        assertLegible("button text (onPrimary) on primary", DarkColors.onPrimary, DarkColors.primary)
+    fun `brand text colours are legible on panels`() {
+        mapOf(
+            "Text" to CbColors.Text, "Muted" to CbColors.Muted, "Amber" to CbColors.Amber, "Axis" to CbColors.Axis,
+            "AlliedText" to CbColors.AlliedText, "Unassigned" to CbColors.Unassigned, "Sky" to CbColors.Sky
+        ).forEach { (name, c) -> assertLegible("$name on Panel", c, CbColors.Panel) }
     }
 
     @Test
-    fun `light theme primary text is legible on surface`() {
-        assertLegible("primary on surface", LightColors.primary, LightColors.surface)
-        assertLegible("button text (onPrimary) on primary", LightColors.onPrimary, LightColors.primary)
+    fun `text on brand fills is legible`() {
+        assertLegible("white on Red (Retry)", Color.White, CbColors.Red)
+        assertLegible("white on RedDeep (stale strip)", Color.White, CbColors.RedDeep)
+    }
+
+    @Test
+    fun `scheme text roles are legible`() {
+        with(CbDarkScheme) {
+            assertLegible("onSurface", onSurface, surface)
+            assertLegible("onSurfaceVariant", onSurfaceVariant, surface)
+            assertLegible("secondary text buttons", secondary, surface)
+            assertLegible("tertiary links", tertiary, surface)
+            assertLegible("onPrimary", onPrimary, primary)
+            assertLegible("onError", onError, error)
+        }
     }
 }
