@@ -29,6 +29,7 @@
     <string name="unstar_cd">Unstar %1$s</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_data">Player data: il2statsapi.combatbox.net</string>
+    <string name="about_mission_data">Mission data: campaign-data.combatbox.net</string>
     <string name="about_source">github.com/riaanjutte/CBOnline-Android</string>
     <string name="close">Close</string>
     <string name="in_game">In-game: %1$s</string>

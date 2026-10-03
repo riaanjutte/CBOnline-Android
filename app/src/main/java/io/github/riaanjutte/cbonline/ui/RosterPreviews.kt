@@ -1,6 +1,5 @@
 package io.github.riaanjutte.cbonline.ui
 
-import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.riaanjutte.cbonline.data.Coalition
@@ -60,9 +59,23 @@ private fun Preview(state: RosterUiState) = CbOnlineTheme {
 private fun LoadingPreview() = Preview(RosterUiState())
 
 @Preview(showBackground = true)
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun LoadedPreview() = Preview(loaded(update = UpdateInfo("1.1.0", "https://example.invalid")))
+
+// Review Focus: large text must wrap and grow inside the cards, not clip
+@Preview(showBackground = true, fontScale = 2f)
+@Composable
+private fun LargeFontPreview() = Preview(loaded())
+
+// Review Focus: the header and list stay usable on a short, wide screen
+@Preview(showBackground = true, widthDp = 800, heightDp = 360)
+@Composable
+private fun LandscapePreview() = Preview(loaded())
+
+// Review Focus: update banner and refresh strip together still leave room for the list
+@Preview(showBackground = true, heightDp = 640)
+@Composable
+private fun AllStripsPreview() = Preview(loaded(update = UpdateInfo("1.1.0", "https://example.invalid")).copy(refreshFailed = true))
 
 @Preview(showBackground = true)
 @Composable

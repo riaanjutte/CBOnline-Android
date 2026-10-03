@@ -16,6 +16,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.github.riaanjutte.cbonline.R
+import io.github.riaanjutte.cbonline.ui.theme.CbColors
+import io.github.riaanjutte.cbonline.ui.theme.CbText
+import java.util.Locale
 
 private const val SOURCE_URL = "https://github.com/riaanjutte/CBOnline-Android"
 
@@ -23,16 +26,23 @@ private const val SOURCE_URL = "https://github.com/riaanjutte/CBOnline-Android"
 fun AboutDialog(versionName: String, onOpenUrl: (String) -> Unit, onClose: () -> Unit) {
     AlertDialog(
         onDismissRequest = onClose,
-        confirmButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.close)) } },
-        icon = { Image(painterResource(R.drawable.cb_logo), contentDescription = null, modifier = Modifier.size(72.dp)) },
-        title = { Text(stringResource(R.string.app_name)) },
+        containerColor = CbColors.Panel,
+        confirmButton = {
+            TextButton(onClick = onClose) {
+                Text(stringResource(R.string.close).uppercase(Locale.ROOT), style = CbText.Button, color = CbColors.Amber)
+            }
+        },
+        icon = { Image(painterResource(R.drawable.cb_logo), contentDescription = null, modifier = Modifier.size(68.dp)) },
+        title = { Text(stringResource(R.string.app_name).uppercase(Locale.ROOT), style = CbText.MissionName, color = CbColors.Text) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.about_version, versionName))
-                Text(stringResource(R.string.about_data))
+                Text(stringResource(R.string.about_version, versionName), style = MaterialTheme.typography.bodyMedium, color = CbColors.Muted)
+                Text(stringResource(R.string.about_data), style = MaterialTheme.typography.bodyMedium, color = CbColors.Text)
+                Text(stringResource(R.string.about_mission_data), style = MaterialTheme.typography.bodyMedium, color = CbColors.Text)
                 Text(
                     stringResource(R.string.about_source),
-                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CbColors.Sky,
                     textDecoration = TextDecoration.Underline,
                     modifier = Modifier.clickable { onOpenUrl(SOURCE_URL) }
                 )

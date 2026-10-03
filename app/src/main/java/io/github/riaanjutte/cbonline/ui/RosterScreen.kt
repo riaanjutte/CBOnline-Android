@@ -1,25 +1,28 @@
 package io.github.riaanjutte.cbonline.ui
 
 import android.text.format.DateFormat
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -30,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.riaanjutte.cbonline.R
 import io.github.riaanjutte.cbonline.data.Coalition
 import io.github.riaanjutte.cbonline.data.MissionInfo
@@ -37,9 +41,14 @@ import io.github.riaanjutte.cbonline.roster.Roster
 import io.github.riaanjutte.cbonline.roster.RosterRow
 import io.github.riaanjutte.cbonline.ui.brand.BrandHeader
 import io.github.riaanjutte.cbonline.ui.brand.MapBackground
-import io.github.riaanjutte.cbonline.ui.theme.StarColor
+import io.github.riaanjutte.cbonline.ui.brand.panelSegment
+import io.github.riaanjutte.cbonline.ui.brand.sectionPositions
+import io.github.riaanjutte.cbonline.ui.theme.CbColors
+import io.github.riaanjutte.cbonline.ui.theme.CbText
 import io.github.riaanjutte.cbonline.ui.theme.color
+import io.github.riaanjutte.cbonline.ui.theme.textColor
 import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,19 +69,23 @@ fun RosterScreen(
                 onRefresh = onRefresh,
                 modifier = Modifier.weight(1f).fillMaxWidth()
             ) {
-            val roster = state.roster
-            if (roster != null) {
-                RosterList(roster, state, onToggleFriend, onDismissUpdate, onOpenUrl)
-            } else {
-                // No roster yet, loading or failed: the mission comes from a different source, so keep it
-                // on screen — including during each retry, which would otherwise flash a bare spinner
-                Column(Modifier.fillMaxSize()) {
-                    if (state.mission != null) MissionCard(state.mission, Modifier.padding(16.dp))
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        if (state.isLoading) CircularProgressIndicator() else LoadError(state.errorMessage, onRefresh)
+                val roster = state.roster
+                if (roster != null) {
+                    RosterList(roster, state, onToggleFriend, onDismissUpdate, onOpenUrl)
+                } else {
+                    // No roster yet, loading or failed: the mission comes from a different source, so keep it
+                    // on screen — including during each retry, which would otherwise flash a bare spinner
+                    Column(Modifier.fillMaxSize()) {
+                        if (state.mission != null) MissionCard(state.mission, Modifier.padding(10.dp))
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            if (state.isLoading) {
+                                CircularProgressIndicator(color = CbColors.Amber)
+                            } else {
+                                LoadError(state.errorMessage, onRefresh)
+                            }
+                        }
                     }
                 }
-            }
             }
         }
     }
@@ -85,16 +98,16 @@ private fun LoadError(detail: String?, onRetry: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(stringResource(R.string.load_failed), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.load_failed).uppercase(Locale.ROOT), style = CbText.ErrorTitle, color = CbColors.Text)
         if (detail != null) {
-            Text(
-                detail,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = CbColors.Muted, textAlign = TextAlign.Center)
         }
-        Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+        Button(
+            onClick = onRetry,
+            colors = ButtonDefaults.buttonColors(containerColor = CbColors.Red, contentColor = Color.White)
+        ) {
+            Text(stringResource(R.string.retry).uppercase(Locale.ROOT), style = CbText.Button)
+        }
     }
 }
 
@@ -108,11 +121,13 @@ private fun RosterList(
 ) {
     val context = LocalContext.current
     val updatedTime = state.lastUpdated?.let { DateFormat.getTimeFormat(context).format(Date.from(it)) }
-    // LazyColumn's builder isn't composable, so resolve strings and colours here
-    val friendsTitle = stringResource(R.string.section_friends)
-    val axisTitle = stringResource(R.string.section_axis, roster.axisCount)
-    val alliedTitle = stringResource(R.string.section_allied, roster.alliedCount)
-    val unassignedTitle = stringResource(R.string.section_unassigned, roster.unassignedCount)
+    // LazyColumn's builder isn't composable, so resolve strings here
+    val titles = SectionTitles(
+        friends = stringResource(R.string.section_friends),
+        axis = stringResource(R.string.section_axis, roster.axisCount),
+        allied = stringResource(R.string.section_allied, roster.alliedCount),
+        unassigned = stringResource(R.string.section_unassigned, roster.unassignedCount)
+    )
     val staleText = updatedTime?.let { stringResource(R.string.refresh_failed, it) }
     val nobodyText = stringResource(R.string.nobody_flying)
 
@@ -123,55 +138,62 @@ private fun RosterList(
             UpdateBanner(info, onDownload = { onOpenUrl(info.url) }, onDismiss = onDismissUpdate)
         }
         if (state.refreshFailed && staleText != null) {
-            Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
-                Text(staleText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp, 8.dp))
+            Box(Modifier.fillMaxWidth().background(CbColors.RedDeep)) {
+                Text(staleText, style = MaterialTheme.typography.bodyMedium, color = Color.White, modifier = Modifier.padding(12.dp, 8.dp))
             }
         }
-        RosterItems(roster, state.mission, updatedTime, friendsTitle, axisTitle, alliedTitle, unassignedTitle, nobodyText, onToggleFriend)
+        RosterItems(roster, state.mission, updatedTime, titles, nobodyText, onToggleFriend)
     }
 }
+
+private class SectionTitles(val friends: String, val axis: String, val allied: String, val unassigned: String)
 
 @Composable
 private fun ColumnScope.RosterItems(
     roster: Roster,
     mission: MissionInfo?,
     updatedTime: String?,
-    friendsTitle: String,
-    axisTitle: String,
-    alliedTitle: String,
-    unassignedTitle: String,
+    titles: SectionTitles,
     nobodyText: String,
     onToggleFriend: (String) -> Unit
 ) {
     // Edge-to-edge without a Scaffold: keep the last rows clear of the navigation bar
     val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 16.dp + navBarBottom)) {
+    LazyColumn(
+        Modifier.weight(1f).fillMaxWidth(),
+        contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 16.dp + navBarBottom)
+    ) {
         // Always the first item, even without data, so it's never inserted above the visible list
-        item(key = "mission") { MissionCard(mission, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) }
-        item(key = "summary") { SummaryCard(roster, updatedTime, Modifier.padding(16.dp)) }
+        item(key = "mission") { MissionCard(mission, Modifier.padding(bottom = 10.dp)) }
+        item(key = "summary") { SummaryCard(roster, updatedTime, Modifier.padding(bottom = 10.dp)) }
         if (roster.total == 0) {
             item(key = "nobody") {
                 Text(
-                    nobodyText,
-                    style = MaterialTheme.typography.bodyLarge,
+                    nobodyText.uppercase(Locale.ROOT),
+                    style = CbText.Label.copy(fontSize = 14.sp),
+                    color = CbColors.Muted,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp)
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
                 )
             }
         }
         if (roster.starredCount > 0) {
-            stickyHeader(key = "header:friends") { SectionHeader(friendsTitle, StarColor) }
-            itemsIndexed(roster.friendsOnline, key = { i, r -> "friends:$i:${r.nickname}" }) { _, row ->
-                PlayerRow(row, showSideTag = true, onToggle = { onToggleFriend(row.nickname) })
+            // Online and offline friends form one continuous panel under one header
+            val online = roster.friendsOnline.size
+            val pos = sectionPositions(online + roster.friendsOffline.size)
+            stickyHeader(key = "header:friends") { SectionHeader(titles.friends, CbColors.Amber, CbColors.Amber, pos[0]) }
+            itemsIndexed(roster.friendsOnline, key = { i, r -> "friends:$i:${r.nickname}" }) { i, row ->
+                PlayerRow(row, showSideTag = true, onToggle = { onToggleFriend(row.nickname) }, Modifier.panelSegment(pos[i + 1]))
             }
-            itemsIndexed(roster.friendsOffline, key = { i, name -> "friends-offline:$i:$name" }) { _, name ->
-                OfflineFriendRow(name, onToggle = { onToggleFriend(name) })
+            itemsIndexed(roster.friendsOffline, key = { i, name -> "friends-offline:$i:$name" }) { i, name ->
+                OfflineFriendRow(name, onToggle = { onToggleFriend(name) }, Modifier.panelSegment(pos[online + i + 1]))
             }
+            item(key = "gap:friends") { Spacer(Modifier.height(10.dp)) }
         }
-        sideSection("axis", axisTitle, Coalition.Axis.color(), roster.axis, onToggleFriend)
-        sideSection("allied", alliedTitle, Coalition.Allied.color(), roster.allied, onToggleFriend)
+        sideSection("axis", titles.axis, Coalition.Axis, roster.axis, onToggleFriend)
+        sideSection("allied", titles.allied, Coalition.Allied, roster.allied, onToggleFriend)
         if (roster.unassigned.isNotEmpty()) {
-            sideSection("unassigned", unassignedTitle, Coalition.Unassigned.color(), roster.unassigned, onToggleFriend)
+            sideSection("unassigned", titles.unassigned, Coalition.Unassigned, roster.unassigned, onToggleFriend)
         }
     }
 }
@@ -179,13 +201,15 @@ private fun ColumnScope.RosterItems(
 private fun LazyListScope.sideSection(
     section: String,
     title: String,
-    accent: Color,
+    side: Coalition,
     rows: List<RosterRow>,
     onToggleFriend: (String) -> Unit
 ) {
-    stickyHeader(key = "header:$section") { SectionHeader(title, accent) }
+    val pos = sectionPositions(rows.size)
+    stickyHeader(key = "header:$section") { SectionHeader(title, side.color(), side.textColor(), pos[0]) }
     // Keys include section and index: the API can list the same nickname twice
-    itemsIndexed(rows, key = { i, r -> "$section:$i:${r.nickname}" }) { _, row ->
-        PlayerRow(row, showSideTag = false, onToggle = { onToggleFriend(row.nickname) })
+    itemsIndexed(rows, key = { i, r -> "$section:$i:${r.nickname}" }) { i, row ->
+        PlayerRow(row, showSideTag = false, onToggle = { onToggleFriend(row.nickname) }, Modifier.panelSegment(pos[i + 1]))
     }
+    item(key = "gap:$section") { Spacer(Modifier.height(10.dp)) }
 }
