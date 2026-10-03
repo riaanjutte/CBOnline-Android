@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -9,6 +11,11 @@ val (vMajor, vMinor, vPatch) = appVersion.split(".").map(String::toInt)
 val realApiBaseUrl = "https://il2statsapi.combatbox.net"
 // Test hook (debug only): -Pcbonline.apiBaseUrl=... points the debug build at another host
 val debugApiBaseUrl = providers.gradleProperty("cbonline.apiBaseUrl").getOrElse(realApiBaseUrl)
+
+// Release signing: real key from git-ignored keystore.properties; otherwise unsigned,
+// unless -Pcbonline.debugSignRelease=true (local testing only, never publish that APK)
+val keystoreProps = rootProject.file("keystore.properties")
+val debugSignRelease = providers.gradleProperty("cbonline.debugSignRelease").orNull == "true"
 
 android {
     namespace = "io.github.riaanjutte.cbonline"
@@ -22,12 +29,30 @@ android {
         versionCode = vMajor * 10000 + vMinor * 100 + vPatch
     }
 
+    signingConfigs {
+        if (keystoreProps.exists()) create("release") {
+            val p = Properties().apply { keystoreProps.inputStream().use(::load) }
+            storeFile = file(p.getProperty("storeFile"))
+            storePassword = p.getProperty("storePassword")
+            keyAlias = p.getProperty("keyAlias")
+            keyPassword = p.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
         }
         release {
             buildConfigField("String", "API_BASE_URL", "\"$realApiBaseUrl\"")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = when {
+                keystoreProps.exists() -> signingConfigs.getByName("release")
+                debugSignRelease -> signingConfigs.getByName("debug")
+                else -> null
+            }
         }
     }
 
