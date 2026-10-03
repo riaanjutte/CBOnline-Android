@@ -1,4 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">CB Online</string>
+    <string name="about">About</string>
+    <string name="more_options">More options</string>
+    <string name="online_count">%1$d online</string>
+    <string name="sides">%1$d Axis · %2$d Allied</string>
+    <string name="sides_unassigned">%1$d Axis · %2$d Allied · %3$d unassigned</string>
+    <string name="friends_online">Friends: %1$d of %2$d online</string>
+    <string name="updated_at">Updated %1$s</string>
+    <string name="nobody_flying">Nobody\'s flying right now.</string>
+    <string name="refresh_failed">Couldn\'t refresh — showing %1$s</string>
+    <string name="load_failed">Couldn\'t load players</string>
+    <string name="retry">Retry</string>
+    <string name="update_available">Version %1$s available</string>
+    <string name="download">Download</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="section_friends">Friends</string>
+    <string name="section_axis">Axis (%1$d)</string>
+    <string name="section_allied">Allied (%1$d)</string>
+    <string name="section_unassigned">Unassigned (%1$d)</string>
+    <string name="side_axis">Axis</string>
+    <string name="side_allied">Allied</string>
+    <string name="side_unassigned">Unassigned</string>
+    <string name="offline">offline</string>
+    <string name="star_cd">Star %1$s</string>
+    <string name="unstar_cd">Unstar %1$s</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_data">Player data: il2statsapi.combatbox.net</string>
+    <string name="about_source">github.com/riaanjutte/CBOnline-Android</string>
+    <string name="close">Close</string>
 </resources>
