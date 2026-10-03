@@ -34,6 +34,15 @@ fun weatherLine(weather: Weather): String {
     return parts.joinToString(" · ")
 }
 
+/**
+ * Display form of a " · "-joined line that only wraps between parts, never mid-part:
+ * spaces inside a part become non-breaking, and a word joiner follows "–" and "/" (both break points).
+ */
+fun keepPartsTogether(line: String): String =
+    line.split(" · ").joinToString(" · ") { part ->
+        part.replace(' ', ' ').replace("–", "–⁠").replace("/", "/⁠")
+    }
+
 /** In-game date/time, e.g. "2 Dec 1944, 14:00". */
 fun inGameLabel(start: LocalDateTime): String = start.format(IN_GAME_FORMAT)
 

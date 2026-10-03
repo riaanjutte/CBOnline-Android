@@ -29,4 +29,6 @@
     <string name="about_data">Player data: il2statsapi.combatbox.net</string>
     <string name="about_source">github.com/riaanjutte/CBOnline-Android</string>
     <string name="close">Close</string>
+    <string name="in_game">In-game: %1$s</string>
+    <string name="next_mission">Next: %1$s at %2$s</string>
 </resources>

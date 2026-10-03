@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.riaanjutte.cbonline.R
 import io.github.riaanjutte.cbonline.data.Coalition
+import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.roster.Roster
 import io.github.riaanjutte.cbonline.roster.RosterRow
 import io.github.riaanjutte.cbonline.ui.theme.StarColor
@@ -92,7 +93,11 @@ fun RosterScreen(
                 state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
-                else -> LoadError(state.errorMessage, onRefresh)
+                // A failed roster load must not hide the mission (it comes from a different source)
+                else -> Column(Modifier.fillMaxSize()) {
+                    if (state.mission != null) MissionCard(state.mission, Modifier.padding(16.dp))
+                    Box(Modifier.weight(1f)) { LoadError(state.errorMessage, onRefresh) }
+                }
             }
         }
     }
@@ -149,13 +154,14 @@ private fun RosterList(
                 Text(staleText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp, 8.dp))
             }
         }
-        RosterItems(roster, updatedTime, friendsTitle, axisTitle, alliedTitle, unassignedTitle, nobodyText, onToggleFriend)
+        RosterItems(roster, state.mission, updatedTime, friendsTitle, axisTitle, alliedTitle, unassignedTitle, nobodyText, onToggleFriend)
     }
 }
 
 @Composable
 private fun ColumnScope.RosterItems(
     roster: Roster,
+    mission: MissionInfo?,
     updatedTime: String?,
     friendsTitle: String,
     axisTitle: String,
@@ -165,6 +171,8 @@ private fun ColumnScope.RosterItems(
     onToggleFriend: (String) -> Unit
 ) {
     LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 16.dp)) {
+        // Always the first item, even without data, so it's never inserted above the visible list
+        item(key = "mission") { MissionCard(mission, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) }
         item(key = "summary") { SummaryCard(roster, updatedTime, Modifier.padding(16.dp)) }
         if (roster.total == 0) {
             item(key = "nobody") {

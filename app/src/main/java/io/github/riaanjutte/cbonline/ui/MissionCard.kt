@@ -1,0 +1,84 @@
+package io.github.riaanjutte.cbonline.ui
+
+import android.text.format.DateFormat
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import io.github.riaanjutte.cbonline.R
+import io.github.riaanjutte.cbonline.data.MissionInfo
+import io.github.riaanjutte.cbonline.data.Weather
+import io.github.riaanjutte.cbonline.roster.inGameLabel
+import io.github.riaanjutte.cbonline.roster.keepPartsTogether
+import io.github.riaanjutte.cbonline.roster.timeLeftLabel
+import io.github.riaanjutte.cbonline.roster.weatherLine
+import kotlinx.coroutines.delay
+import java.time.Instant
+import java.time.LocalDateTime
+import java.util.Date
+
+@Composable
+fun MissionCard(mission: MissionInfo?, modifier: Modifier = Modifier) {
+    if (mission == null) {
+        // 1 dp, not 0: a zero-height first item doesn't count as visible, so the list would anchor
+        // to the summary card and push this card off-screen once mission data arrives
+        Spacer(modifier.height(1.dp))
+        return
+    }
+    // Local clock for the countdown; ticks only while the card is on screen, never fetches
+    val now by produceState(Instant.now()) {
+        while (true) {
+            delay(30_000)
+            value = Instant.now()
+        }
+    }
+    val context = LocalContext.current
+    ElevatedCard(modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(mission.name, style = MaterialTheme.typography.titleMedium)
+            Text(
+                timeLeftLabel(mission.estimatedEnd, now),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            MissionDetails(mission.historicalStart, mission.weather)
+            mission.next?.let { next ->
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                val start = DateFormat.getTimeFormat(context).format(Date.from(next.expectedStart))
+                Text(stringResource(R.string.next_mission, next.name, start), style = MaterialTheme.typography.bodyMedium)
+                MissionDetails(next.historicalStart, next.weather)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MissionDetails(historicalStart: LocalDateTime?, weather: Weather?) {
+    historicalStart?.let {
+        Text(
+            stringResource(R.string.in_game, inGameLabel(it)),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+    weather?.let {
+        Text(
+            keepPartsTogether(weatherLine(it)),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}

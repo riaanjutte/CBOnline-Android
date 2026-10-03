@@ -126,6 +126,15 @@ class MissionTextTest {
     }
 
     @Test
+    fun `weather line wraps only between parts`() {
+        // NBSP inside each part, word joiner after "–" and "/", plain spaces only around the separators
+        assertEquals(
+            "-15 °C · Heavy cloud 3,500–⁠9,500 m · Wind 280° 4 m/⁠s",
+            keepPartsTogether("-15 °C · Heavy cloud 3,500–9,500 m · Wind 280° 4 m/s")
+        )
+    }
+
+    @Test
     fun `in-game label`() {
         assertEquals("2 Dec 1944, 14:00", inGameLabel(LocalDateTime.of(1944, 12, 2, 14, 0)))
         assertEquals("15 Sep 1943, 11:00", inGameLabel(LocalDateTime.of(1943, 9, 15, 11, 0)))
