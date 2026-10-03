@@ -3,7 +3,9 @@
     <string name="app_name">CB Online</string>
     <string name="about">About</string>
     <string name="more_options">More options</string>
-    <string name="online_count">%1$d online</string>
+    <string name="pilots_online">Pilots online</string>
+    <string name="current_mission">Current mission</string>
+    <string name="next_label">Next · %1$s</string>
     <string name="sides">%1$d Axis · %2$d Allied</string>
     <string name="sides_unassigned">%1$d Axis · %2$d Allied · %3$d unassigned</string>
     <string name="friends_online">Friends: %1$d of %2$d online</string>
@@ -30,5 +32,4 @@
     <string name="about_source">github.com/riaanjutte/CBOnline-Android</string>
     <string name="close">Close</string>
     <string name="in_game">In-game: %1$s</string>
-    <string name="next_mission">Next: %1$s at %2$s</string>
 </resources>

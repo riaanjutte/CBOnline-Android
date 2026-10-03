@@ -1,13 +1,14 @@
 package io.github.riaanjutte.cbonline.ui
 
 import android.text.format.DateFormat
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,6 +29,10 @@ import io.github.riaanjutte.cbonline.roster.inGameLabel
 import io.github.riaanjutte.cbonline.roster.keepPartsTogether
 import io.github.riaanjutte.cbonline.roster.timeLeftLabel
 import io.github.riaanjutte.cbonline.roster.weatherLine
+import io.github.riaanjutte.cbonline.ui.brand.BrandLabel
+import io.github.riaanjutte.cbonline.ui.brand.panel
+import io.github.riaanjutte.cbonline.ui.theme.CbColors
+import io.github.riaanjutte.cbonline.ui.theme.CbText
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDateTime
@@ -37,8 +42,9 @@ import java.util.Date
 fun MissionCard(mission: MissionInfo?, modifier: Modifier = Modifier) {
     if (mission == null) {
         // 1 dp, not 0: a zero-height first item doesn't count as visible, so the list would anchor
-        // to the summary card and push this card off-screen once mission data arrives
-        Spacer(modifier.height(1.dp))
+        // to the summary card and push this card off-screen once mission data arrives.
+        // Deliberately not `modifier`: the caller's padding would leave a gap above the summary.
+        Spacer(Modifier.height(1.dp))
         return
     }
     // Local clock for the countdown: ticks while the screen is started, restarts fresh on return, never fetches
@@ -48,19 +54,19 @@ fun MissionCard(mission: MissionInfo?, modifier: Modifier = Modifier) {
     }
     val now by clock.collectAsState(initial = Instant.now())
     val context = LocalContext.current
-    ElevatedCard(modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(mission.name, style = MaterialTheme.typography.titleMedium)
-            Text(
-                timeLeftLabel(mission.estimatedEnd, now),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
+    Column(modifier.fillMaxWidth().panel()) {
+        // Brand strip; the panel's clip rounds its top corners
+        Box(Modifier.fillMaxWidth().height(3.dp).background(CbColors.Red))
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            BrandLabel(stringResource(R.string.current_mission))
+            Text(mission.name, style = CbText.MissionName, color = CbColors.Text)
+            Text(timeLeftLabel(mission.estimatedEnd, now), style = CbText.Countdown, color = CbColors.Amber)
             MissionDetails(mission.historicalStart, mission.weather)
             mission.next?.let { next ->
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(Modifier.padding(vertical = 8.dp), color = CbColors.PanelBorder)
                 val start = DateFormat.getTimeFormat(context).format(Date.from(next.expectedStart))
-                Text(stringResource(R.string.next_mission, next.name, start), style = MaterialTheme.typography.bodyMedium)
+                BrandLabel(stringResource(R.string.next_label, start))
+                Text(next.name, style = CbText.NextName, color = CbColors.Text)
                 MissionDetails(next.historicalStart, next.weather)
             }
         }
@@ -70,17 +76,9 @@ fun MissionCard(mission: MissionInfo?, modifier: Modifier = Modifier) {
 @Composable
 private fun MissionDetails(historicalStart: LocalDateTime?, weather: Weather?) {
     historicalStart?.let {
-        Text(
-            stringResource(R.string.in_game, inGameLabel(it)),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text(stringResource(R.string.in_game, inGameLabel(it)), style = MaterialTheme.typography.bodySmall, color = CbColors.Muted)
     }
     weather?.let {
-        Text(
-            keepPartsTogether(weatherLine(it)),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text(keepPartsTogether(weatherLine(it)), style = MaterialTheme.typography.bodySmall, color = CbColors.Muted)
     }
 }
