@@ -73,14 +73,19 @@ class FriendAlertCheck(
         val friendNames = friends.friends.first()
         val squadTags = squads.squads.first()
         if (friendNames.isEmpty() && squadTags.isEmpty()) return // nobody to look for, so no request
-        val online = try {
-            RosterBuilder.build(players.fetch(), friendNames, squadTags).friendsOnline
+        val roster = try {
+            RosterBuilder.build(players.fetch(), friendNames, squadTags)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Log.w("CBOnline", "Friend alert check failed", e)
             return // try again at the next check, with the old list
         }
+        // An empty server (between missions, or a hiccup) says nothing about who left, so it's treated like a failed
+        // check: forgetting everyone would alert for all of them again once it fills. The cost: a friend who was on
+        // just before it emptied and is among the first back isn't alerted.
+        if (roster.total == 0) return
+        val online = roster.friendsOnline
         val previous = store.lastOnline.first()
         store.setLastOnline(online.map { nameKey(it.nickname) }.toSet())
         if (previous == null) return // first check after switching on: just record who's there

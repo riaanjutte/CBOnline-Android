@@ -119,12 +119,23 @@ class FriendAlertsTest {
     @Test
     fun `a friend who went offline alerts again when they come back`() = runTest {
         val store = FakeAlertsStore(enabled = true, last = setOf("hans"))
-        val players = FakePlayers(emptyList())
+        val players = FakePlayers(listOf(p("Bob")))
         check(players, store).run()
         assertEquals(emptySet<String>(), store.lastOnline.value)
-        players.players = listOf(p("Hans"))
+        players.players = listOf(p("Hans"), p("Bob"))
         check(players, store).run()
         assertEquals(listOf(listOf("Hans")), notified)
+    }
+
+    @Test
+    fun `an empty server keeps the last list, so friends aren't alerted again when it fills`() = runTest {
+        val store = FakeAlertsStore(enabled = true, last = setOf("hans"))
+        val players = FakePlayers(emptyList())
+        check(players, store).run()
+        assertEquals(setOf("hans"), store.lastOnline.value)
+        players.players = listOf(p("Hans"))
+        check(players, store).run()
+        assertTrue(notified.isEmpty())
     }
 
     @Test
