@@ -9,7 +9,7 @@ See who's flying on [Combat Box](https://combatbox.net) (IL-2 Great Battles) bef
 <p align="center">
   <img src="site/screenshots/main.png" width="250" alt="Main screen: the current mission and its time left, the next mission, 25 pilots online split by side, and the Axis list">
   <img src="site/screenshots/lists.png" width="250" alt="Two starred friends pinned in a Friends section above the Axis list">
-  <img src="site/screenshots/about.png" width="250" alt="The About dialog showing the version and where the data comes from">
+  <img src="site/screenshots/stats.png" width="250" alt="A pilot's stats: lifetime flight hours, kills and best streaks, most-flown aircraft, and their record against other players">
 </p>
 
 <sub>The pilot names in these screenshots are made up.</sub>
