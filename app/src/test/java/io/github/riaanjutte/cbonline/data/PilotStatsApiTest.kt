@@ -1,5 +1,9 @@
 package io.github.riaanjutte.cbonline.data
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -9,12 +13,14 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
 
 class PilotStatsApiTest {
 
@@ -133,6 +139,17 @@ class PilotStatsApiTest {
         } catch (e: Exception) {
             // the screen shows "Couldn't load stats" with Retry
         }
+    }
+
+    @Test
+    fun `cancelling stops a slow request straight away`() = runBlocking {
+        lifetime = MockResponse().setBody(LIFETIME).setBodyDelay(3, TimeUnit.SECONDS)
+        val fetch = launch(Dispatchers.Default) { api.fetch("Hans") }
+        repeat(2) { assertNotNull(server.takeRequest(5, TimeUnit.SECONDS)) } // both requests are under way
+        val started = System.nanoTime()
+        fetch.cancelAndJoin()
+        val millis = (System.nanoTime() - started) / 1_000_000
+        assertTrue("cancelling took $millis ms", millis < 1_500)
     }
 
     @Test

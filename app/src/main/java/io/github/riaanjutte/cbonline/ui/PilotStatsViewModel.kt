@@ -24,29 +24,35 @@ sealed interface StatsUiState {
 }
 
 /**
- * Opens one pilot's stats at a time. Answers are kept for the session; failures aren't (including a missing PvP
- * part that failed to load), so opening the pilot again or Retry fetches again.
+ * Opens one pilot's stats at a time. Answers are kept for [KEEP_STATS_MILLIS], since stats change after every
+ * sortie; failures aren't (including a missing PvP part that failed to load), so opening the pilot again or Retry
+ * fetches again.
  */
-class PilotStatsViewModel(private val source: StatsSource) : ViewModel() {
+class PilotStatsViewModel(
+    private val source: StatsSource,
+    private val now: () -> Long = System::currentTimeMillis
+) : ViewModel() {
 
     private val _state = MutableStateFlow<StatsUiState>(StatsUiState.Hidden)
     val state: StateFlow<StatsUiState> = _state.asStateFlow()
 
-    private val cache = mutableMapOf<String, StatsResult>()
+    private class Cached(val result: StatsResult, val at: Long)
+
+    private val cache = mutableMapOf<String, Cached>()
     private var job: Job? = null
 
     fun open(nickname: String) {
         job?.cancel()
         val key = nickname.trim().lowercase(Locale.ROOT)
-        cache[key]?.let {
-            _state.value = it.toUiState(nickname)
+        cache[key]?.takeIf { now() - it.at < KEEP_STATS_MILLIS }?.let {
+            _state.value = it.result.toUiState(nickname)
             return
         }
         _state.value = StatsUiState.Loading(nickname)
         job = viewModelScope.launch {
             _state.value = try {
                 source.fetch(nickname)
-                    .also { if (it !is StatsResult.Found || it.complete) cache[key] = it }
+                    .also { if (it !is StatsResult.Found || it.complete) cache[key] = Cached(it, now()) }
                     .toUiState(nickname)
             } catch (e: CancellationException) {
                 throw e
@@ -71,3 +77,5 @@ class PilotStatsViewModel(private val source: StatsSource) : ViewModel() {
         StatsResult.NotFound -> StatsUiState.NotFound(nickname)
     }
 }
+
+private const val KEEP_STATS_MILLIS = 15 * 60_000L

@@ -31,7 +31,12 @@ class PilotStatsViewModelTest {
     }
 
     private val source = FakeStats()
-    private val vm = PilotStatsViewModel(source)
+    private var nowMillis = 1_000_000L
+    private val vm = PilotStatsViewModel(source, now = { nowMillis })
+
+    private fun minutesPass(minutes: Long) {
+        nowMillis += minutes * 60_000
+    }
 
     @Test
     fun `starts hidden`() = assertEquals(StatsUiState.Hidden, vm.state.value)
@@ -54,6 +59,20 @@ class PilotStatsViewModelTest {
         vm.open(" hans "); runCurrent()
         assertEquals(listOf("Hans"), source.calls)
         assertEquals(StatsUiState.Loaded(" hans ", stats("Hans")), vm.state.value)
+    }
+
+    @Test
+    fun `cached stats are kept for 15 minutes, then fetched again`() = runTest {
+        vm.open("Hans"); runCurrent()
+        vm.close()
+        minutesPass(14)
+        vm.open("Hans"); runCurrent()
+        assertEquals(1, source.calls.size)
+        vm.close()
+        minutesPass(2)
+        vm.open("Hans"); runCurrent()
+        assertEquals(2, source.calls.size)
+        assertEquals(StatsUiState.Loaded("Hans", stats("Hans")), vm.state.value)
     }
 
     @Test

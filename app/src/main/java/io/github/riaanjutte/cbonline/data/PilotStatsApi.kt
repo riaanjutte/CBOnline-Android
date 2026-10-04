@@ -11,7 +11,6 @@ import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.IOException
 import kotlin.math.roundToInt
 
 /** Fetches a pilot's lifetime and PvP records by in-game name, both at once. */
@@ -41,7 +40,7 @@ class PilotStatsApi(
     private class PvpAnswer(val record: PvpRecord?, val failed: Boolean)
 
     /** The PvP record is extra: missing or failing, it just leaves that part out (and a failure isn't kept). */
-    private fun fetchPvp(nickname: String): PvpAnswer = try {
+    private suspend fun fetchPvp(nickname: String): PvpAnswer = try {
         PvpAnswer(json.decodeFromString<PvpDto>(get("PvpStats", nickname)).toModel(), failed = false)
     } catch (e: CancellationException) {
         throw e
@@ -50,13 +49,11 @@ class PilotStatsApi(
         PvpAnswer(null, failed = true)
     }
 
-    private fun get(endpoint: String, nickname: String): String {
+    /** Cancellable: closing the stats panel stops a slow request instead of waiting for it. */
+    private suspend fun get(endpoint: String, nickname: String): String {
         val url = "$baseUrl/api/$endpoint".toHttpUrl().newBuilder().addQueryParameter("name", nickname).build()
         val request = Request.Builder().url(url).header("User-Agent", userAgent).build()
-        return client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
-            response.body?.string().orEmpty()
-        }
+        return client.newCall(request).bodyOrThrow()
     }
 
     // The feed sends counts as JSON numbers that may carry a decimal point, so everything is read as Double
