@@ -21,8 +21,11 @@ test("missing or empty tag", () => {
   assert.equal(pickApk(rel({ tag_name: "" })), null);
 });
 
+// Any GitHub download URL; pickApk only accepts links on github.com
+const gh = (name) => `https://github.com/riaanjutte/CBOnline-Android/releases/download/v9.9.9/${name}`;
+
 test("no apk asset", () =>
-  assert.equal(pickApk(rel({ assets: [{ name: "notes.txt", size: 10, browser_download_url: "u" }] })), null));
+  assert.equal(pickApk(rel({ assets: [{ name: "notes.txt", size: 10, browser_download_url: gh("notes.txt") }] })), null));
 
 test("empty or missing assets", () => {
   assert.equal(pickApk(rel({ assets: [] })), null);
@@ -32,17 +35,23 @@ test("empty or missing assets", () => {
 test("apk not first, capitals accepted", () =>
   assert.equal(
     pickApk(rel({ assets: [
-      { name: "a.txt", size: 1, browser_download_url: "x" },
-      { name: "App.APK", size: 1000000, browser_download_url: "y" },
+      { name: "a.txt", size: 1, browser_download_url: gh("a.txt") },
+      { name: "App.APK", size: 1000000, browser_download_url: gh("App.APK") },
     ] })).url,
-    "y"
+    gh("App.APK")
   ));
+
+test("only GitHub download links are used", () => {
+  for (const url of ["javascript:alert(1)", "https://evil.example/CBOnline-1.0.0.apk", "http://github.com/x.apk", "https://github.com.evil.example/x.apk"]) {
+    assert.equal(pickApk(rel({ assets: [{ name: "CBOnline-1.0.0.apk", size: 2321394, browser_download_url: url }] })), null, url);
+  }
+});
 
 test("apk without download url is skipped", () =>
   assert.equal(pickApk(rel({ assets: [{ name: "a.apk", size: 1 }] })), null));
 
 test("size labels", () => {
-  const size = (n) => pickApk(rel({ assets: [{ name: "a.apk", size: n, browser_download_url: "u" }] }));
+  const size = (n) => pickApk(rel({ assets: [{ name: "a.apk", size: n, browser_download_url: gh("a.apk") }] }));
   assert.equal(size(2321394).sizeLabel, "2.3");
   assert.equal(size(1000000).sizeLabel, "1.0");
   assert.equal(size(40000).sizeLabel, "0.1");

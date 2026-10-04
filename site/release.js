@@ -15,7 +15,7 @@ export function pickApk(release) {
   const apk = release.assets.find(
     (a) => a !== null && typeof a === "object" &&
       typeof a.name === "string" && a.name.toLowerCase().endsWith(".apk") &&
-      typeof a.browser_download_url === "string" && a.browser_download_url !== ""
+      typeof a.browser_download_url === "string" && a.browser_download_url.startsWith("https://github.com/")
   );
   if (!apk) return null;
 

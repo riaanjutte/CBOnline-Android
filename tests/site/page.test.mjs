@@ -144,3 +144,53 @@ test("head basics", () => {
     assert.match(html, new RegExp(`<link\\b[^>]*href="assets/${icon.replace(".", "\\.")}"`), `no link to ${icon}`);
   }
 });
+
+// Guards from the final review
+
+test("layout scales with the reader's text size", () => {
+  const c = css();
+  assert.doesNotMatch(c, /@media[^{]*\d+px/, "px breakpoints ignore the browser's font size");
+  const body = c.match(/(?:^|\n)body\s*\{[^}]*\}/)?.[0] ?? "";
+  assert.ok(body, "no body rule");
+  assert.doesNotMatch(body, /overflow-wrap:\s*anywhere/, "anywhere on body lets columns shrink to one letter");
+});
+
+test("review-focus safeguards stay in the CSS", () => {
+  const c = css();
+  assert.match(c, /\[id\]\s*\{[^}]*scroll-margin-top/, "anchor targets must clear the sticky bar");
+  assert.match(c.match(/\n\.hero\s*\{[^}]*\}/)?.[0] ?? "", /background-color:/, "hero needs a plain colour under the map");
+  const smooth = [...c.matchAll(/scroll-behavior:\s*smooth/g)];
+  assert.equal(smooth.length, 1);
+  assert.match(c, /@media\s*\(prefers-reduced-motion:\s*no-preference\)\s*\{\s*html\s*\{\s*scroll-behavior:\s*smooth/);
+});
+
+test("FAQ markers are silent for screen readers", () => {
+  const rules = css().match(/summary::after\s*\{[^}]*\}/g) ?? [];
+  assert.equal(rules.length, 2, "open and closed markers");
+  for (const r of rules) assert.match(r, /content:\s*"[^"]*"\s*\/\s*""/, `marker without empty alt text: ${r}`);
+});
+
+test("FAQ answers start closed", () => {
+  for (const tag of html.match(/<details\b[^>]*>/g) ?? []) assert.doesNotMatch(tag, /\bopen\b/, tag);
+});
+
+test("scripts only talk to GitHub", () => {
+  for (const name of ["main.js", "release.js"]) {
+    const js = read(name);
+    for (const m of js.matchAll(/\bimport\b[^"'`]*["'`]([^"'`]+)["'`]/g)) assert.match(m[1], /^\.\//, `${name} imports ${m[1]}`);
+    assert.doesNotMatch(js, /\bimport\s*\(/, `${name} uses a dynamic import`);
+    for (const m of js.matchAll(/https?:\/\/([^/"'`\s]+)/g)) {
+      assert.ok(["api.github.com", "github.com"].includes(m[1]), `${name} talks to ${m[1]}`);
+    }
+  }
+});
+
+test("README and site FAQ say the same", () => {
+  const readme = readFileSync(new URL("../../README.md", import.meta.url), "utf8").replace(/\r/g, "");
+  const section = readme.split("\n## Questions\n")[1]?.split("\n## ")[0] ?? "";
+  const fromReadme = [...section.matchAll(/\*\*(.+?)\*\*\n(.+)/g)].map((m) => [m[1], m[2].replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")]);
+  const fromSite = [...(sectionById("faq") ?? "").matchAll(/<summary\b[^>]*>([\s\S]*?)<\/summary>\s*<div class="details-body">([\s\S]*?)<\/div>/g)]
+    .map((m) => [text(m[1]), text(m[2])]);
+  assert.equal(fromReadme.length, 7);
+  assert.deepEqual(fromSite, fromReadme);
+});

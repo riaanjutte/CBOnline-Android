@@ -36,8 +36,11 @@ body {
   font-family: var(--body);
   font-size: 1rem;
   line-height: 1.55;
-  overflow-wrap: anywhere;
+  /* Break a word only when it can't fit on a line at all; "anywhere" would let columns shrink to one letter */
+  overflow-wrap: break-word;
 }
+
+h1, h2, summary { hyphens: auto; }
 
 img { max-width: 100%; height: auto; }
 
@@ -90,14 +93,18 @@ a { color: var(--sky); text-underline-offset: 0.15em; }
   background-position: center;
   padding: 2.5rem 1rem 3rem;
 }
+/* Text and screenshot share a row only while the text keeps at least 22rem; with larger text
+   or a narrower window the screenshot moves below it */
 .hero-inner {
   max-width: var(--width);
   margin: 0 auto;
-  display: grid;
-  gap: 2rem;
-  justify-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem 3rem;
 }
-.hero-text { width: 100%; }
+.hero-text { flex: 1 1 22rem; min-width: 0; }
 .label {
   margin: 0;
   font-family: var(--display);
@@ -132,11 +139,15 @@ h1 {
 .button:hover { background: var(--red-deep); }
 .release { margin: 0.6rem 0 0; color: var(--muted); font-size: 0.875rem; text-align: center; }
 .shot { display: block; border: 1px solid var(--edge); border-radius: 12px; }
-.hero-shot { width: 15rem; }
+.hero-shot { flex: none; width: 15rem; }
+.nowrap { white-space: nowrap; }
 
-@media (min-width: 760px) {
+/* Breakpoints in em follow the browser's own text size setting */
+@media (max-width: 22em) {
+  .button { padding-inline: 0.75rem; letter-spacing: 0.03em; }
+}
+@media (min-width: 47.5em) {
   .hero { padding: 4rem 1.5rem 4.5rem; }
-  .hero-inner { grid-template-columns: 1fr auto; align-items: center; gap: 3rem; }
   h1 { font-size: 3.2rem; }
   .button { display: inline-block; }
   .release { text-align: left; }
@@ -155,7 +166,8 @@ h2 {
   border-left: 3px solid var(--amber);
   font-family: var(--display);
   font-weight: 600;
-  font-size: 1.5rem;
+  /* Grows with the reader's text size, but never wider than the screen allows for one long word */
+  font-size: min(1.5rem, 9.5vw);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   line-height: 1.2;
@@ -171,14 +183,14 @@ code {
   background: rgba(255, 255, 255, 0.07);
   border-radius: 4px;
   padding: 0.05rem 0.3rem;
+  overflow-wrap: anywhere;
 }
 
 /* Panels, like the app */
 .panel { background: var(--panel); border: 1px solid var(--edge); border-radius: 8px; }
 
-.features { display: grid; gap: 1rem; grid-template-columns: 1fr; }
-@media (min-width: 600px) { .features { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 900px) { .features { grid-template-columns: repeat(3, 1fr); } }
+/* As many 17rem-wide columns as fit (one, two or three), so larger text means fewer columns */
+.features { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
 .feature { border-top: 3px solid var(--red); padding: 1rem 1.1rem 1.1rem; }
 .feature h3 {
   margin: 0;
@@ -215,8 +227,9 @@ summary {
   color: var(--text);
 }
 summary::-webkit-details-marker { display: none; }
-summary::after { content: "+"; color: var(--amber); font-size: 1.3rem; line-height: 1; }
-details[open] > summary::after { content: "\2212"; }
+/* Decorative markers: the empty alt text keeps screen readers from announcing "plus" */
+summary::after { content: "+" / ""; color: var(--amber); font-size: 1.3rem; line-height: 1; }
+details[open] > summary::after { content: "\2212" / ""; }
 .details-body { padding: 0 1rem 0.6rem; }
 .details-body p, .details-body li { color: var(--muted); }
 
