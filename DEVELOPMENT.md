@@ -84,6 +84,11 @@ These are for local testing. **Never publish an APK built with them.**
 - `-Pcbonline.missionUrl=<url>` points a *debug* build's mission card at another file (e.g. a local fake). Release builds always use the real file.
 - `-Pcbonline.debugSignRelease=true` signs a *release* build with the debug key, so the shrunk (R8) build can be installed and checked on a device.
 
+### Testing reminders and friend alerts on a device
+
+- **Mission reminder:** point `-Pcbonline.missionUrl` at a local fake whose `next_mission.expected_start` is a little over 10 minutes away, set the bell, and the notification comes about a minute later. `adb shell dumpsys alarm` shows the alarm: an exact one has `window=0`; without "Alarms & reminders" it's inexact and its window can be close to an hour.
+- **Friend alerts:** switching them on runs a first check straight away (it only records who's online). After that, WorkManager ignores forced runs before the 15-minute period is up (`adb logcat` shows "executed before schedule"), so wait for the real run with the app in the background, or switch alerts off and on again for a fresh first check. In Doze the check waits until the phone wakes.
+
 ## Website
 
 The website at <https://riaanjutte.github.io/CBOnline-Android/> is the static files in `site/`, with no build step. The download button asks GitHub's API for the latest release when the page loads, so publishing a release needs no site change.
