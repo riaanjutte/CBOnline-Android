@@ -7,7 +7,7 @@
     <string name="current_mission">Current mission</string>
     <string name="next_label">Next · %1$s</string>
     <string name="sides">%1$d Axis · %2$d Allied</string>
-    <string name="sides_unassigned">%1$d Axis · %2$d Allied · %3$d unassigned</string>
+    <string name="sides_unassigned">%1$d Axis · %2$d Allied · %3$d not spawned</string>
     <string name="friends_online">Friends: %1$d of %2$d online</string>
     <string name="updated_at">Updated %1$s</string>
     <string name="nobody_flying">Nobody\'s flying right now.</string>
@@ -20,10 +20,10 @@
     <string name="section_friends">Friends</string>
     <string name="section_axis">Axis (%1$d)</string>
     <string name="section_allied">Allied (%1$d)</string>
-    <string name="section_unassigned">Unassigned (%1$d)</string>
+    <string name="section_unassigned">Not spawned (%1$d)</string>
     <string name="side_axis">Axis</string>
     <string name="side_allied">Allied</string>
-    <string name="side_unassigned">Unassigned</string>
+    <string name="side_unassigned">Not spawned</string>
     <string name="offline">offline</string>
     <string name="star_cd">Star %1$s</string>
     <string name="unstar_cd">Unstar %1$s</string>
