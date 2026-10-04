@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-val appVersion = "1.2.1"
+val appVersion = "1.2.2"
 val (vMajor, vMinor, vPatch) = appVersion.split(".").map(String::toInt)
 val realApiBaseUrl = "https://il2statsapi.combatbox.net"
 // Test hook (debug only): -Pcbonline.apiBaseUrl=... points the debug build at another host
