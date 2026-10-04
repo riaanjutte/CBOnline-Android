@@ -83,3 +83,23 @@ These are for local testing. **Never publish an APK built with them.**
 - `-Pcbonline.apiBaseUrl=<url>` points a *debug* build at another host. For example, `http://127.0.0.1:9` shows the error screen. Release builds always use the real API.
 - `-Pcbonline.missionUrl=<url>` points a *debug* build's mission card at another file (e.g. a local fake). Release builds always use the real file.
 - `-Pcbonline.debugSignRelease=true` signs a *release* build with the debug key, so the shrunk (R8) build can be installed and checked on a device.
+
+## Website
+
+The website at <https://riaanjutte.github.io/CBOnline-Android/> is the static files in `site/`, with no build step. The download button asks GitHub's API for the latest release when the page loads, so publishing a release needs no site change.
+
+- Preview it locally, then open <http://localhost:8000/>:
+
+  ```powershell
+  python -m http.server 8000 -d site
+  ```
+
+- Run its tests (Node 24 or newer):
+
+  ```powershell
+  node --test "tests/site/*.test.mjs"
+  ```
+
+- Publishing is automatic. A push to `main` that touches `site/`, `tests/site/` or `.github/workflows/pages.yml` runs the **Publish website** workflow, which runs the tests and then publishes `site/` to GitHub Pages. You can also start it by hand from the Actions tab.
+
+The README and the website carry the same install help and FAQ. When you change one, change the other in the same commit.

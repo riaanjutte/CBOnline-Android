@@ -2,6 +2,8 @@
 
 See who's flying on [Combat Box](https://combatbox.net) (IL-2 Great Battles) before you start the sim. CB Online shows who's online, the current mission and how long it has left, and your friends at the top of the list.
 
+**Website:** [riaanjutte.github.io/CBOnline-Android](https://riaanjutte.github.io/CBOnline-Android/)
+
 **[Download the latest version](https://github.com/riaanjutte/CBOnline-Android/releases/latest)** · Android 8.0 or newer · free
 
 <p align="center">
