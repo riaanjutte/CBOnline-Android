@@ -35,6 +35,20 @@ CB Online isn't on the Play Store. You install it from this page.
 
 Only download CB Online from this repository's releases page.
 
+### If Android says the developer is unverified
+
+Google is phasing in [developer verification](https://developer.android.com/developer-verification/guides/faq) on Android. Phones with Google Play can refuse to install apps from developers who haven't registered with Google. It's starting in Brazil, Indonesia, Singapore and Thailand, and is due to reach other countries in 2027. Updates are affected too.
+
+If your phone won't install CB Online because it's from an unverified developer, you can allow such apps. You only need to do this once:
+
+1. [Turn on Developer options](https://www.android.com/articles/enable-android-developer-settings/).
+2. In Developer options, turn on the setting for apps from unverified developers. Confirm that nobody is pressuring you to do it, then restart your phone.
+3. Wait 24 hours. This is a one-time safety delay.
+4. Go back to the same setting and confirm with your fingerprint, face or PIN. You can then allow these apps for 7 days or indefinitely.
+5. Open the APK again and tap **Install anyway**.
+
+If you use adb on a computer, `adb install CBOnline-<version>.apk` also works, with no waiting.
+
 ## Updating
 
 When a new version is published, a notice appears at the top of the app: *Version x.y.z available*.
