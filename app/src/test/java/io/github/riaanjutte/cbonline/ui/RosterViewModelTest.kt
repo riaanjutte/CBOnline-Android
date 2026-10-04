@@ -183,6 +183,32 @@ class RosterViewModelTest {
     }
 
     @Test
+    fun `switching alerts on while the server is quiet remembers nobody, so the first friend on alerts`() = runTest {
+        players.next = { emptyList() }
+        missions.next = { MissionInfo("Now", null, Instant.now().plus(Duration.ofHours(2)), null, null, startedAt = Instant.now().minus(Duration.ofHours(1))) }
+        friends.friends.value = setOf("bob")
+        alertsStore.lastOnline.value = setOf("stale")
+        val vm = vm()
+        subscribe(vm)
+        vm.setFriendAlerts(true)
+        runCurrent()
+        assertEquals(emptySet<String>(), alertsStore.lastOnline.value)
+    }
+
+    @Test
+    fun `switching alerts on during a mission change's empty list leaves the first check to record who's on`() = runTest {
+        players.next = { emptyList() }
+        missions.next = { MissionInfo("New", null, Instant.now().plus(Duration.ofHours(3)), null, null, startedAt = Instant.now().minus(Duration.ofMinutes(1))) }
+        friends.friends.value = setOf("bob")
+        val vm = vm()
+        subscribe(vm)
+        vm.setFriendAlerts(true)
+        runCurrent()
+        assertNull(alertsStore.lastOnline.value)
+        assertTrue(scheduler.running)
+    }
+
+    @Test
     fun `switching friend alerts on remembers who is already online and starts the checks`() = runTest {
         players.next = { listOf(OnlinePlayer("Bob", Coalition.Axis, "00:10"), OnlinePlayer("Carol", Coalition.Allied, "00:10")) }
         friends.friends.value = setOf("bob")

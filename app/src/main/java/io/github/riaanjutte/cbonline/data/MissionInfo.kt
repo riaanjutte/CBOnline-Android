@@ -10,7 +10,9 @@ data class MissionInfo(
     val historicalStart: LocalDateTime?,
     val estimatedEnd: Instant,
     val weather: Weather?,
-    val next: NextMission?
+    val next: NextMission?,
+    /** When this mission actually started; null if the feed doesn't say. */
+    val startedAt: Instant? = null
 )
 
 data class NextMission(

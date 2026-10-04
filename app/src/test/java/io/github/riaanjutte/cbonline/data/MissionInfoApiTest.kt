@@ -54,7 +54,8 @@ class MissionInfoApiTest {
                 NextMission(
                     "Mitchell's Men (Mar. 1945)", Instant.parse("2026-10-04T00:42:00Z"), LocalDateTime.of(1945, 3, 5, 9, 0),
                     Weather(-15.0, "Heavy", 3500, 9500, 0.0, null, Wind(280, 4.0))
-                )
+                ),
+                startedAt = Instant.parse("2026-10-03T21:42:00Z")
             ),
             api.fetch()
         )
@@ -111,6 +112,16 @@ class MissionInfoApiTest {
         respond(file(mission = """{"name":"M","historical_start":"soon","estimated_end":"2026-10-04T00:42:00Z"}"""))
         val info = api.fetch()
         assertNull(info.historicalStart)
+        assertEquals(Instant.parse("2026-10-04T00:42:00Z"), info.estimatedEnd)
+    }
+
+    @Test
+    fun `a missing or bad start time gives null`() = runTest {
+        respond(file())
+        assertNull(api.fetch().startedAt)
+        respond(file(mission = """{"name":"M","started_at":"earlier","estimated_end":"2026-10-04T00:42:00Z"}"""))
+        val info = api.fetch()
+        assertNull(info.startedAt)
         assertEquals(Instant.parse("2026-10-04T00:42:00Z"), info.estimatedEnd)
     }
 

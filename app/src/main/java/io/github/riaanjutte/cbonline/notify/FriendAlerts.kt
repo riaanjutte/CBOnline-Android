@@ -2,6 +2,7 @@ package io.github.riaanjutte.cbonline.notify
 
 import android.util.Log
 import io.github.riaanjutte.cbonline.data.FriendsRepository
+import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.data.PlayersSource
 import io.github.riaanjutte.cbonline.data.SquadsRepository
 import io.github.riaanjutte.cbonline.data.nameKey
@@ -9,11 +10,25 @@ import io.github.riaanjutte.cbonline.roster.RosterBuilder
 import io.github.riaanjutte.cbonline.roster.RosterRow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import java.time.Duration
+import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
 
 /** Friends online now who weren't at the last check, each once. */
 fun newlyOnline(previous: Set<String>, nowOnline: List<RosterRow>): List<RosterRow> =
     nowOnline.filter { nameKey(it.nickname) !in previous }.distinctBy { nameKey(it.nickname) }
+
+/**
+ * From 2 minutes before to 5 minutes after a mission change: the shown mission's start, or its estimated end until
+ * the feed moves on. The server lists nobody for a minute or two around then, so an empty roster says nothing.
+ */
+fun nearMissionChange(mission: MissionInfo?, now: Instant): Boolean =
+    mission != null && listOfNotNull(mission.startedAt, mission.estimatedEnd).any { change ->
+        !now.isBefore(change.minus(CHANGE_LEAD)) && !now.isAfter(change.plus(CHANGE_TAIL))
+    }
+
+private val CHANGE_LEAD = Duration.ofMinutes(2)
+private val CHANGE_TAIL = Duration.ofMinutes(5)
 
 /** Names for a notification: all of them up to three, otherwise two plus how many more. */
 data class AlertSummary(val shown: List<String>, val others: Int)

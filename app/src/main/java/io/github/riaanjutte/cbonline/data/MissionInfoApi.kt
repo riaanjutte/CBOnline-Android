@@ -45,7 +45,10 @@ class MissionInfoApi(
             val name = current.name?.trim().orEmpty()
             require(name.isNotEmpty()) { "mission has no name" }
             val end = requireNotNull(parseInstant(current.estimatedEnd)) { "bad estimated_end: ${current.estimatedEnd}" }
-            return MissionInfo(name, parseLocal(current.historicalStart), end, weather?.toModel(), nextMission?.toModel())
+            return MissionInfo(
+                name, parseLocal(current.historicalStart), end, weather?.toModel(), nextMission?.toModel(),
+                startedAt = parseInstant(current.startedAt)
+            )
         }
     }
 
@@ -53,6 +56,7 @@ class MissionInfoApi(
     private data class MissionDto(
         val name: String? = null,
         @SerialName("historical_start") val historicalStart: String? = null,
+        @SerialName("started_at") val startedAt: String? = null,
         @SerialName("estimated_end") val estimatedEnd: String? = null
     )
 

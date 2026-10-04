@@ -2,6 +2,7 @@ package io.github.riaanjutte.cbonline.notify
 
 import io.github.riaanjutte.cbonline.data.Coalition
 import io.github.riaanjutte.cbonline.data.FriendsRepository
+import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.data.OnlinePlayer
 import io.github.riaanjutte.cbonline.data.PlayersSource
 import io.github.riaanjutte.cbonline.data.SquadsRepository
@@ -9,9 +10,12 @@ import io.github.riaanjutte.cbonline.roster.RosterRow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
+import java.time.Duration
+import java.time.Instant
 
 class FriendAlertsTest {
 
@@ -23,6 +27,22 @@ class FriendAlertsTest {
             listOf("Otto"),
             newlyOnline(setOf("hans"), listOf(row("Hans"), row("Otto"), row("otto"))).map { it.nickname }
         )
+    }
+
+    @Test
+    fun `near a mission change means 2 minutes before to 5 minutes after its start or estimated end`() {
+        val start = Instant.parse("2026-10-04T09:44:19Z")
+        val mission = MissionInfo("M", null, start.plus(Duration.ofHours(3)), null, null, startedAt = start)
+        assertTrue(nearMissionChange(mission, start.plusSeconds(56)))
+        assertTrue(nearMissionChange(mission, start.minusSeconds(120)))
+        assertTrue(nearMissionChange(mission, start.plusSeconds(300)))
+        assertFalse(nearMissionChange(mission, start.minusSeconds(121)))
+        assertFalse(nearMissionChange(mission, start.plusSeconds(301)))
+        assertFalse(nearMissionChange(mission, start.plus(Duration.ofHours(1))))
+        // Until the feed moves on to the next mission, the shown one's estimated end marks the change
+        assertTrue(nearMissionChange(mission, start.plus(Duration.ofHours(3)).plusSeconds(60)))
+        assertFalse(nearMissionChange(mission.copy(startedAt = null), start))
+        assertFalse(nearMissionChange(null, start))
     }
 
     @Test
