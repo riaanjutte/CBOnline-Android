@@ -173,7 +173,7 @@ tests/site/release.test.mjs  Node test runner tests for release.js (not publishe
 - Triggers: pushes to `main` that touch `site/**`, `tests/site/**` or the workflow file, plus `workflow_dispatch`.
 - Permissions: `contents: read`, `pages: write`, `id-token: write`. Concurrency group `pages`, not cancelling a
   run in progress.
-- Job `test`: checkout, set up Node 24, `node --test tests/site/`.
+- Job `test`: checkout, set up Node 24, `node --test "tests/site/*.test.mjs"`.
 - Job `deploy` (needs `test`, environment `github-pages`): checkout, configure Pages, upload `site/` as the Pages
   artifact, deploy. Uses the current major versions of `actions/checkout`, `actions/setup-node`,
   `actions/configure-pages`, `actions/upload-pages-artifact` and `actions/deploy-pages`, checked at
@@ -190,12 +190,12 @@ tests/site/release.test.mjs  Node test runner tests for release.js (not publishe
 
 - README: a link to the website near the top, and the new screenshot paths.
 - DEVELOPMENT.md: a "Website" section covering previewing locally (`python -m http.server -d site 8000`),
-  running the tests (`node --test tests/site/`), how publishing works, and the rule that the README and the
+  running the tests (`node --test "tests/site/*.test.mjs"`), how publishing works, and the rule that the README and the
   site change together.
 
 ## Testing and verification
 
-**Automated:** `tests/site/release.test.mjs`, written before `release.js` and run with `node --test tests/site/`:
+**Automated:** `tests/site/release.test.mjs`, written before `release.js` and run with `node --test "tests/site/*.test.mjs"`:
 
 - A normal release → version `1.0.0`, the APK URL, size label `2.3`.
 - `tag_name` without a `v`, and with `V`.
