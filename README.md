@@ -1,80 +1,76 @@
 # CB Online
 
-An Android companion app for [Combat Box](https://combatbox.net) (IL-2 Great Battles) players. It shows who's online right now, the player count and side balance, and your starred friends pinned at the top, so you can decide whether it's worth starting the sim. Player data comes from the public `il2statsapi.combatbox.net` API. The app refreshes every 60 seconds while it's on screen and never in the background.
+See who's flying on [Combat Box](https://combatbox.net) (IL-2 Great Battles) before you start the sim. CB Online shows who's online, the current mission and how long it has left, and your friends at the top of the list.
 
-Requires Android 8.0 (API 26) or newer.
+**[Download the latest version](https://github.com/riaanjutte/CBOnline-Android/releases/latest)** · Android 8.0 or newer · free
 
-## Building
+<p align="center">
+  <img src="docs/screenshots/main.png" width="250" alt="Main screen: the current mission with 41 minutes left, the next mission, 25 pilots online split by side, and the Axis list">
+  <img src="docs/screenshots/lists.png" width="250" alt="Two starred friends pinned in a Friends section above the Axis list">
+  <img src="docs/screenshots/about.png" width="250" alt="The About dialog showing the version and where the data comes from">
+</p>
 
-Install Android Studio (it provides the SDK and a JDK), then:
+<sub>The pilot names in these screenshots are made up.</sub>
 
-1. Point `JAVA_HOME` at Android Studio's bundled JDK:
+## What it shows
 
-   ```powershell
-   $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
-   ```
+- **Who's online.** The pilot count, the Axis / Allied split, and both side lists with how long each pilot has been in the mission.
+- **The current mission.** You get its name, a countdown to the end, the in-game date and time, and the weather.
+- **What's next.** The next mission shows when it starts (in your phone's time), with its own date and weather.
+- **Your friends.** Tap the star next to a name, and that pilot is pinned in a Friends section at the top. When they aren't flying, they're shown there as offline.
+- **Fresh data.** The app refreshes every minute while it's open. Pull down to refresh straight away.
+- **Update notices.** The app tells you when a new version is out.
 
-2. Create `local.properties` (git-ignored) with your SDK path, for example:
+## Installing
 
-   ```properties
-   sdk.dir=C\:\\Users\\<you>\\AppData\\Local\\Android\\Sdk
-   ```
+CB Online isn't on the Play Store. You install it from this page.
 
-3. Build and install on a connected device:
+1. On your phone, open the [latest release](https://github.com/riaanjutte/CBOnline-Android/releases/latest).
+2. Under **Assets**, tap **CBOnline-&lt;version&gt;.apk** to download it.
+3. Open the downloaded file from the notification or your Downloads folder.
+4. If Android says your browser isn't allowed to install apps, tap **Settings**, turn on **Allow from this source**, then go back.
+5. Tap **Install**.
 
-   ```powershell
-   .\gradlew.bat :app:installDebug
-   ```
+**Google Play Protect may show a warning** because the app doesn't come from the Play Store. It might say the app is from an unknown developer, or offer to scan it. The wording varies between phones. Tap **More details** and then **Install anyway**. If it offers a scan, either choice is fine.
 
-## Tests
+Only download CB Online from this repository's releases page.
 
-```powershell
-.\gradlew.bat :app:testDebugUnitTest
-```
+## Updating
 
-## Creating the release key (once, by the maintainer)
+When a new version is published, a notice appears at the top of the app: *Version x.y.z available*.
 
-1. Generate the key. Pick the passwords yourself and keep them safe:
+- Tap **Download** to open the release page, then install the new APK the same way as before. It installs over the old version, and your starred friends are kept.
+- Tap **Dismiss** to hide the notice for that version.
 
-   ```powershell
-   New-Item -ItemType Directory -Force "$env:USERPROFILE\keys" | Out-Null
-   & "$env:JAVA_HOME\bin\keytool.exe" -genkeypair -v -keystore "$env:USERPROFILE\keys\cbonline-release.jks" -alias cbonline -keyalg RSA -keysize 4096 -validity 36500
-   ```
+## Questions
 
-2. Create `keystore.properties` in the project root. It's git-ignored; never commit it.
+**Does it run in the background or drain my battery?**
+No. It only refreshes while it's on screen and stops when you leave it. It never sends notifications.
 
-   ```properties
-   storeFile=C\:\\Users\\<you>\\keys\\cbonline-release.jks
-   storePassword=<store password>
-   keyAlias=cbonline
-   keyPassword=<key password>
-   ```
+**Do I need an account?**
+No. There's nothing to sign in to, and the only access the app needs is to the internet.
 
-3. **Back up the `.jks` file and both passwords.** Every update must be signed with the same key. If it's lost, players have to uninstall and reinstall to upgrade.
+**What does it send or collect?**
+Nothing about you. It reads Combat Box's public player and mission data and asks GitHub whether there's a newer version. Your starred friends are stored only on your phone.
 
-Without `keystore.properties`, release builds come out unsigned and can't be installed. That's deliberate, so a wrongly signed APK can't be published by accident.
+**A red bar says "Couldn't refresh".**
+The latest refresh failed, so you're seeing the last list that loaded, and the bar gives its time. The app keeps trying every minute, and you can pull down to try again now.
 
-## Releasing
+**The mission card is missing.**
+The mission card appears once the mission information has loaded. If that information can't be reached, you'll still see who's online without it.
 
-1. Bump `appVersion` in `app/build.gradle.kts`. The `versionCode` is derived from it.
-2. Build the signed release:
+**My friend is flying but shows as offline.**
+Stars follow the in-game name, ignoring capitals. If your friend changed their name, star the new one. To remove the old name, tap its star in the Friends section.
 
-   ```powershell
-   .\gradlew.bat :app:assembleRelease
-   ```
+**I found a bug or have an idea.**
+Please [open an issue](https://github.com/riaanjutte/CBOnline-Android/issues).
 
-3. Publish it on GitHub:
+## Data and credits
 
-   ```powershell
-   gh release create v<version> app\build\outputs\apk\release\app-release.apk --repo riaanjutte/CBOnline-Android --title "CB Online <version>"
-   ```
+- Player data comes from il2statsapi.combatbox.net, and mission data from campaign-data.combatbox.net.
+- The Combat Box logo, wordmark and map artwork are used with permission.
+- The app uses the [Oswald](https://fonts.google.com/specimen/Oswald) typeface, under the [SIL Open Font License 1.1](app/src/main/assets/licenses/OFL-Oswald.txt).
 
-The repository must be **public** for the in-app update check to work. The app reads `releases/latest`, so drafts and pre-releases are ignored.
+## For developers
 
-## Debug-only test hooks
-
-These are for local testing. **Never publish an APK built with them.**
-
-- `-Pcbonline.apiBaseUrl=<url>` points a *debug* build at another host. For example, `http://127.0.0.1:9` shows the error screen. Release builds always use the real API.
-- `-Pcbonline.missionUrl=<url>` points a *debug* build's mission card at another file (e.g. a local fake). Release builds always use the real file.
-- `-Pcbonline.debugSignRelease=true` signs a *release* build with the debug key, so the shrunk (R8) build can be installed and checked on a device.
+To build, test and release the app, see [DEVELOPMENT.md](DEVELOPMENT.md).
