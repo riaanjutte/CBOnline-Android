@@ -5,9 +5,9 @@ See who's flying on [Combat Box](https://combatbox.net) (IL-2 Great Battles) bef
 **[Download the latest version](https://github.com/riaanjutte/CBOnline-Android/releases/latest)** · Android 8.0 or newer · free
 
 <p align="center">
-  <img src="docs/screenshots/main.png" width="250" alt="Main screen: the current mission with 41 minutes left, the next mission, 25 pilots online split by side, and the Axis list">
-  <img src="docs/screenshots/lists.png" width="250" alt="Two starred friends pinned in a Friends section above the Axis list">
-  <img src="docs/screenshots/about.png" width="250" alt="The About dialog showing the version and where the data comes from">
+  <img src="site/screenshots/main.png" width="250" alt="Main screen: the current mission with 41 minutes left, the next mission, 25 pilots online split by side, and the Axis list">
+  <img src="site/screenshots/lists.png" width="250" alt="Two starred friends pinned in a Friends section above the Axis list">
+  <img src="site/screenshots/about.png" width="250" alt="The About dialog showing the version and where the data comes from">
 </p>
 
 <sub>The pilot names in these screenshots are made up.</sub>
