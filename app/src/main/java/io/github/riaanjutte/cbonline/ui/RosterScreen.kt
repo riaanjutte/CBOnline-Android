@@ -86,7 +86,9 @@ fun RosterScreen(
                     // on screen — including during each retry, which would otherwise flash a bare spinner.
                     // A list, not a plain column, so pull-to-refresh works here too and nothing is cut off in landscape
                     LazyColumn(Modifier.fillMaxSize()) {
-                        if (state.mission != null) item(key = "mission") { MissionCard(state.mission, Modifier.padding(10.dp)) }
+                        // Always present (an empty spacer until the mission arrives): an item inserted above the
+                        // visible one would land off-screen, leaving the list scrolled past the mission card
+                        item(key = "mission") { MissionCard(state.mission, Modifier.padding(10.dp)) }
                         item(key = "status") {
                             Box(Modifier.fillParentMaxHeight(0.7f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                                 if (state.isLoading) {

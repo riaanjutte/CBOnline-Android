@@ -29,6 +29,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,7 +47,7 @@ import io.github.riaanjutte.cbonline.roster.tidyAircraftName
 import io.github.riaanjutte.cbonline.ui.brand.BrandLabel
 import io.github.riaanjutte.cbonline.ui.theme.CbColors
 import io.github.riaanjutte.cbonline.ui.theme.CbText
-import java.text.NumberFormat
+
 import java.util.Locale
 
 /** A pilot's stats, sliding up over the roster; [state] must not be [StatsUiState.Hidden]. */
@@ -99,34 +100,32 @@ fun PilotStatsSheet(
 
 @Composable
 private fun StatsContent(stats: PilotStats) {
-    val whole = NumberFormat.getIntegerInstance()
-    val oneDecimal = NumberFormat.getNumberInstance().apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }
-    val twoDecimals = NumberFormat.getNumberInstance().apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }
-    val airStreak = stringResource(R.string.stats_best_streak, whole.format(stats.bestAirStreak))
-    val groundStreak = stringResource(R.string.stats_best_streak, whole.format(stats.bestGroundStreak))
+    val fmt = remember { StatsFormat() }
+    val airStreak = stringResource(R.string.stats_best_streak, fmt.whole(stats.bestAirStreak))
+    val groundStreak = stringResource(R.string.stats_best_streak, fmt.whole(stats.bestGroundStreak))
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         BrandLabel(stringResource(R.string.stats_lifetime), color = CbColors.Amber)
         StatPair(
-            Stat(oneDecimal.format(stats.flightHours), stringResource(R.string.stats_flight_hours)),
-            Stat(whole.format(stats.score), stringResource(R.string.stats_score))
+            Stat(fmt.oneDecimal(stats.flightHours), stringResource(R.string.stats_flight_hours)),
+            Stat(fmt.whole(stats.score), stringResource(R.string.stats_score))
         )
         StatPair(
-            Stat(whole.format(stats.airKills), stringResource(R.string.stats_air_kills), airStreak),
-            Stat(whole.format(stats.groundKills), stringResource(R.string.stats_ground_kills), groundStreak)
+            Stat(fmt.whole(stats.airKills), stringResource(R.string.stats_air_kills), airStreak),
+            Stat(fmt.whole(stats.groundKills), stringResource(R.string.stats_ground_kills), groundStreak)
         )
         StatPair(
-            Stat(whole.format(stats.deaths), stringResource(R.string.stats_deaths)),
-            Stat(whole.format(stats.aircraftLost), stringResource(R.string.stats_aircraft_lost))
+            Stat(fmt.whole(stats.deaths), stringResource(R.string.stats_deaths)),
+            Stat(fmt.whole(stats.aircraftLost), stringResource(R.string.stats_aircraft_lost))
         )
         StatPair(
-            Stat(twoDecimals.format(stats.airKillsPerAircraftLost), stringResource(R.string.stats_kills_per_loss)),
-            Stat(twoDecimals.format(stats.airKillsPerHour), stringResource(R.string.stats_kills_per_hour))
+            Stat(fmt.twoDecimals(stats.airKillsPerAircraftLost), stringResource(R.string.stats_kills_per_loss)),
+            Stat(fmt.twoDecimals(stats.airKillsPerHour), stringResource(R.string.stats_kills_per_hour))
         )
         Column {
             BrandLabel(stringResource(R.string.stats_sorties))
             Text(
-                stringResource(R.string.stats_sorties_split, whole.format(stats.alliedSorties), whole.format(stats.axisSorties)),
+                stringResource(R.string.stats_sorties_split, fmt.whole(stats.alliedSorties), fmt.whole(stats.axisSorties)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = CbColors.Text
             )
@@ -143,7 +142,7 @@ private fun StatsContent(stats: PilotStats) {
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            stringResource(R.string.stats_hours, oneDecimal.format(aircraft.hours)),
+                            stringResource(R.string.stats_hours, fmt.oneDecimal(aircraft.hours)),
                             style = MaterialTheme.typography.bodyMedium,
                             color = CbColors.Muted
                         )
@@ -155,12 +154,12 @@ private fun StatsContent(stats: PilotStats) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 BrandLabel(stringResource(R.string.stats_vs_players))
                 Text(
-                    stringResource(R.string.stats_pvp_line, whole.format(pvp.victories), whole.format(pvp.defeats), twoDecimals.format(pvp.airToAirRatio)),
+                    stringResource(R.string.stats_pvp_line, fmt.whole(pvp.victories), fmt.whole(pvp.defeats), fmt.twoDecimals(pvp.airToAirRatio)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = CbColors.Text
                 )
                 Text(
-                    stringResource(R.string.stats_ai_victories, whole.format(pvp.aiVictories)),
+                    stringResource(R.string.stats_ai_victories, fmt.whole(pvp.aiVictories)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = CbColors.Muted
                 )
