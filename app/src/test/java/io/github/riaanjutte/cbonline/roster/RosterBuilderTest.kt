@@ -89,4 +89,45 @@ class RosterBuilderTest {
         )
         assertEquals(listOf("=JG52=Hans", "[CB]Ace", "ace", "Øystein"), r.allied.map { it.nickname })
     }
+
+    @Test
+    fun `starred squad members join friends with their tag`() {
+        val r = RosterBuilder.build(
+            listOf(p("=JG52=Hans", Axis), p("=jg52=Otto", Axis), p("Bob", Allied)),
+            friends = emptySet(),
+            squads = setOf("=JG52=")
+        )
+        assertEquals(listOf("=JG52=Hans", "=jg52=Otto"), r.friendsOnline.map { it.nickname })
+        assertEquals(listOf("=JG52=", "=JG52="), r.friendsOnline.map { it.squad })
+        assertEquals(listOf(false, false), r.friendsOnline.map { it.isFriend })
+        assertEquals(null, r.allied.single().squad)
+        assertTrue(r.squadsOffline.isEmpty())
+    }
+
+    @Test
+    fun `a starred pilot who is also in a starred squad appears once`() {
+        val r = RosterBuilder.build(listOf(p("[CB]Ace", Allied)), friends = setOf("[CB]Ace"), squads = setOf("[CB]"))
+        assertEquals(listOf("[CB]Ace"), r.friendsOnline.map { it.nickname })
+        assertEquals(RosterRow("[CB]Ace", Allied, "10 min", isFriend = true, squad = "[CB]"), r.friendsOnline.single())
+    }
+
+    @Test
+    fun `starred squads with nobody online are listed separately`() {
+        val r = RosterBuilder.build(listOf(p("[CB]Ace", Allied)), friends = emptySet(), squads = setOf("=JG52=", "[CB]", "-VVS-"))
+        assertEquals(listOf("-VVS-", "=JG52="), r.squadsOffline)
+    }
+
+    @Test
+    fun `squads don't change the starred-pilot counts`() {
+        val r = RosterBuilder.build(
+            listOf(p("[CB]Ace", Allied), p("Bob", Axis)),
+            friends = setOf("Bob", "Dave"),
+            squads = setOf("[CB]")
+        )
+        assertEquals(2, r.starredCount)
+        assertEquals(1, r.friendsOnlineCount)
+        assertEquals(listOf("Dave"), r.friendsOffline)
+        // same case-insensitive order as the side lists, where "[" sorts before letters
+        assertEquals(listOf("[CB]Ace", "Bob"), r.friendsOnline.map { it.nickname })
+    }
 }

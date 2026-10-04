@@ -8,7 +8,10 @@ data class RosterRow(
     val nickname: String,
     val coalition: Coalition,
     val timeLabel: String,
-    val isFriend: Boolean
+    /** Starred individually. */
+    val isFriend: Boolean,
+    /** The starred squad tag this pilot's name contains, if any. */
+    val squad: String? = null
 )
 
 /** Everything the roster screen shows, already counted, split and sorted. */
@@ -25,16 +28,29 @@ data class Roster(
     val friendsOnlineCount: Int,
     val axis: List<RosterRow>,
     val allied: List<RosterRow>,
-    val unassigned: List<RosterRow>
+    val unassigned: List<RosterRow>,
+    /** Starred squad tags with no online member. */
+    val squadsOffline: List<String> = emptyList()
 )
 
 object RosterBuilder {
 
-    fun build(players: List<OnlinePlayer>, friends: Set<String>): Roster {
+    /**
+     * Friends online are pilots starred individually or by squad, each listed once. The starred-pilot counts
+     * ([Roster.starredCount], [Roster.friendsOnlineCount]) leave squads out.
+     */
+    fun build(players: List<OnlinePlayer>, friends: Set<String>, squads: Set<String> = emptySet()): Roster {
         val friendKeys = friends.map(::friendKey).toSet()
+        val squadTags = squads.sortedWith(String.CASE_INSENSITIVE_ORDER)
         // sortedWith is stable, so duplicate nicknames keep API order
         val rows = players
-            .map { RosterRow(it.nickname, it.coalition, formatTimeOnMission(it.timeOnMission), friendKey(it.nickname) in friendKeys) }
+            .map {
+                RosterRow(
+                    it.nickname, it.coalition, formatTimeOnMission(it.timeOnMission),
+                    isFriend = friendKey(it.nickname) in friendKeys,
+                    squad = squadTags.firstOrNull { tag -> isSquadMember(it.nickname, tag) }
+                )
+            }
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.nickname })
         val onlineKeys = rows.map { friendKey(it.nickname) }.toSet()
         val axis = rows.filter { it.coalition == Coalition.Axis }
@@ -46,13 +62,14 @@ object RosterBuilder {
             axisCount = axis.size,
             alliedCount = allied.size,
             unassignedCount = unassigned.size,
-            friendsOnline = rows.filter { it.isFriend },
+            friendsOnline = rows.filter { it.isFriend || it.squad != null },
             friendsOffline = friendsOffline,
             starredCount = friends.size,
             friendsOnlineCount = friends.size - friendsOffline.size,
             axis = axis,
             allied = allied,
-            unassigned = unassigned
+            unassigned = unassigned,
+            squadsOffline = squadTags.filter { tag -> rows.none { isSquadMember(it.nickname, tag) } }
         )
     }
 
