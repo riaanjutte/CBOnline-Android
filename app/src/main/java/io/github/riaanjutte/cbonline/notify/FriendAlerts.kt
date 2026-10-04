@@ -4,19 +4,16 @@ import android.util.Log
 import io.github.riaanjutte.cbonline.data.FriendsRepository
 import io.github.riaanjutte.cbonline.data.PlayersSource
 import io.github.riaanjutte.cbonline.data.SquadsRepository
+import io.github.riaanjutte.cbonline.data.nameKey
 import io.github.riaanjutte.cbonline.roster.RosterBuilder
 import io.github.riaanjutte.cbonline.roster.RosterRow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
-
-/** Friends online are remembered by lower-case name, matching how stars ignore case. */
-fun friendKey(nickname: String): String = nickname.trim().lowercase(Locale.ROOT)
 
 /** Friends online now who weren't at the last check, each once. */
 fun newlyOnline(previous: Set<String>, nowOnline: List<RosterRow>): List<RosterRow> =
-    nowOnline.filter { friendKey(it.nickname) !in previous }.distinctBy { friendKey(it.nickname) }
+    nowOnline.filter { nameKey(it.nickname) !in previous }.distinctBy { nameKey(it.nickname) }
 
 /** Names for a notification: all of them up to three, otherwise two plus how many more. */
 data class AlertSummary(val shown: List<String>, val others: Int)
@@ -85,7 +82,7 @@ class FriendAlertCheck(
             return // try again at the next check, with the old list
         }
         val previous = store.lastOnline.first()
-        store.setLastOnline(online.map { friendKey(it.nickname) }.toSet())
+        store.setLastOnline(online.map { nameKey(it.nickname) }.toSet())
         if (previous == null) return // first check after switching on: just record who's there
         val newly = newlyOnline(previous, online)
         // With the app open you can see the list, so the check only keeps its memory up to date

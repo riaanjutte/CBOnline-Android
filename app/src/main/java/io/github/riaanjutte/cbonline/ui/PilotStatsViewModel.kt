@@ -6,12 +6,12 @@ import androidx.lifecycle.viewModelScope
 import io.github.riaanjutte.cbonline.data.PilotStats
 import io.github.riaanjutte.cbonline.data.StatsResult
 import io.github.riaanjutte.cbonline.data.StatsSource
+import io.github.riaanjutte.cbonline.data.nameKey
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 
 /** The stats panel; [nickname] is the name as tapped. */
@@ -43,7 +43,7 @@ class PilotStatsViewModel(
 
     fun open(nickname: String) {
         job?.cancel()
-        val key = nickname.trim().lowercase(Locale.ROOT)
+        val key = nameKey(nickname)
         cache[key]?.takeIf { now() - it.at < KEEP_STATS_MILLIS }?.let {
             _state.value = it.result.toUiState(nickname)
             return

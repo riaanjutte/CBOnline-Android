@@ -2,7 +2,7 @@ package io.github.riaanjutte.cbonline.roster
 
 import io.github.riaanjutte.cbonline.data.Coalition
 import io.github.riaanjutte.cbonline.data.OnlinePlayer
-import java.util.Locale
+import io.github.riaanjutte.cbonline.data.nameKey
 
 data class RosterRow(
     val nickname: String,
@@ -40,23 +40,23 @@ object RosterBuilder {
      * ([Roster.starredCount], [Roster.friendsOnlineCount]) leave squads out.
      */
     fun build(players: List<OnlinePlayer>, friends: Set<String>, squads: Set<String> = emptySet()): Roster {
-        val friendKeys = friends.map(::friendKey).toSet()
+        val nameKeys = friends.map(::nameKey).toSet()
         val squadTags = squads.sortedWith(String.CASE_INSENSITIVE_ORDER)
         // sortedWith is stable, so duplicate nicknames keep API order
         val rows = players
             .map {
                 RosterRow(
                     it.nickname, it.coalition, formatTimeOnMission(it.timeOnMission),
-                    isFriend = friendKey(it.nickname) in friendKeys,
+                    isFriend = nameKey(it.nickname) in nameKeys,
                     squad = squadTags.firstOrNull { tag -> isSquadMember(it.nickname, tag) }
                 )
             }
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.nickname })
-        val onlineKeys = rows.map { friendKey(it.nickname) }.toSet()
+        val onlineKeys = rows.map { nameKey(it.nickname) }.toSet()
         val axis = rows.filter { it.coalition == Coalition.Axis }
         val allied = rows.filter { it.coalition == Coalition.Allied }
         val unassigned = rows.filter { it.coalition == Coalition.Unassigned }
-        val friendsOffline = friends.filter { friendKey(it) !in onlineKeys }.sortedWith(String.CASE_INSENSITIVE_ORDER)
+        val friendsOffline = friends.filter { nameKey(it) !in onlineKeys }.sortedWith(String.CASE_INSENSITIVE_ORDER)
         return Roster(
             total = rows.size,
             axisCount = axis.size,
@@ -72,6 +72,4 @@ object RosterBuilder {
             squadsOffline = squadTags.filter { tag -> rows.none { isSquadMember(it.nickname, tag) } }
         )
     }
-
-    private fun friendKey(name: String) = name.trim().lowercase(Locale.ROOT)
 }

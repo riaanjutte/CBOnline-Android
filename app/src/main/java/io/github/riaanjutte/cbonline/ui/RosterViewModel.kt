@@ -12,9 +12,9 @@ import io.github.riaanjutte.cbonline.data.SquadsRepository
 import io.github.riaanjutte.cbonline.notify.FriendAlertSwitch
 import io.github.riaanjutte.cbonline.notify.MissionReminder
 import io.github.riaanjutte.cbonline.notify.MissionReminders
-import io.github.riaanjutte.cbonline.notify.friendKey
 import io.github.riaanjutte.cbonline.data.UpdateInfo
 import io.github.riaanjutte.cbonline.data.UpdateSource
+import io.github.riaanjutte.cbonline.data.nameKey
 import io.github.riaanjutte.cbonline.roster.Roster
 import io.github.riaanjutte.cbonline.roster.RosterBuilder
 import kotlinx.coroutines.channels.Channel
@@ -138,7 +138,7 @@ class RosterViewModel(
     /** Friends already online when alerts are switched on don't alert; [state]'s roster says who they are. */
     fun setFriendAlerts(on: Boolean) {
         // Null when no roster has loaded: then the first background check records who's online instead
-        val onlineNow = state.value.roster?.friendsOnline?.map { friendKey(it.nickname) }?.toSet()
+        val onlineNow = state.value.roster?.friendsOnline?.map { nameKey(it.nickname) }?.toSet()
         viewModelScope.launch { persist("Saving friend alerts failed") { friendAlerts.set(on, onlineNow) } }
     }
 
