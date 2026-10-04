@@ -58,6 +58,13 @@ class RemindersAndSwitchTest {
     }
 
     @Test
+    fun `a kept reminder re-arms its alarm, which Android drops if the app is force-stopped`() = runTest {
+        reminders.toggle(next("Paravane", 30), now)
+        reminders.reconcile(next("Paravane", 30), now)
+        assertEquals(listOf("schedule Paravane ${at(30)}", "schedule Paravane ${at(30)}"), alarms.log)
+    }
+
+    @Test
     fun `reconciling with nothing set does nothing`() = runTest {
         reminders.reconcile(next("Paravane", 30), now)
         assertEquals(emptyList<String>(), alarms.log)

@@ -77,4 +77,24 @@
     <string name="squad_dialog_confirm">Star</string>
     <string name="cancel">Cancel</string>
     <string name="squad_offline">squad · none online</string>
+
+    <!-- Reminders and friend alerts -->
+    <string name="reminder_set_cd">Remind me 10 minutes before %1$s</string>
+    <string name="reminder_cancel_cd">Cancel the reminder for %1$s</string>
+    <string name="friend_alerts">Friend alerts</string>
+    <string name="notifications_off">Notifications are off for CB Online. You can allow them in Android settings.</string>
+    <string name="channel_reminders">Mission reminders</string>
+    <string name="channel_reminders_text">A reminder before a mission you\'ve set the bell for.</string>
+    <string name="channel_friends">Friend alerts</string>
+    <string name="channel_friends_text">When starred pilots or squad members come online.</string>
+    <string name="notif_reminder_title">Next mission soon</string>
+    <string name="notif_reminder_text">%1$s starts at %2$s</string>
+    <string name="notif_friends_title">Friends online</string>
+    <string name="notif_friends_one">%1$s is online</string>
+    <string name="notif_friends_two">%1$s and %2$s are online</string>
+    <string name="notif_friends_three">%1$s, %2$s and %3$s are online</string>
+    <plurals name="notif_friends_more">
+        <item quantity="one">%1$s, %2$s and %3$d other are online</item>
+        <item quantity="other">%1$s, %2$s and %3$d others are online</item>
+    </plurals>
 </resources>

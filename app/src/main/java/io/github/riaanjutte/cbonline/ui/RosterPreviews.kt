@@ -51,7 +51,7 @@ private fun loaded(
 
 @Composable
 private fun Preview(state: RosterUiState) = CbOnlineTheme {
-    RosterScreen(state, "1.0.0", onRefresh = {}, onToggleFriend = {}, onUnstarSquad = {}, onOpenStats = {}, onDismissUpdate = {}, onOpenUrl = {})
+    RosterScreen(state, "1.0.0", onRefresh = {}, onToggleFriend = {}, onUnstarSquad = {}, onOpenStats = {}, onToggleReminder = {}, onToggleFriendAlerts = {}, onDismissUpdate = {}, onOpenUrl = {})
 }
 
 @Preview(showBackground = true)

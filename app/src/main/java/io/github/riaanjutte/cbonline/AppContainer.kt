@@ -4,7 +4,15 @@ import android.content.Context
 import android.util.Log
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
+import io.github.riaanjutte.cbonline.data.FriendAlertsStore
 import io.github.riaanjutte.cbonline.data.FriendsStore
+import io.github.riaanjutte.cbonline.data.ReminderStore
+import io.github.riaanjutte.cbonline.notify.AlarmReminderAlarms
+import io.github.riaanjutte.cbonline.notify.FriendAlertCheck
+import io.github.riaanjutte.cbonline.notify.FriendAlertSwitch
+import io.github.riaanjutte.cbonline.notify.MissionReminders
+import io.github.riaanjutte.cbonline.notify.Notifications
+import io.github.riaanjutte.cbonline.notify.WorkManagerAlertScheduler
 import io.github.riaanjutte.cbonline.data.MissionInfoApi
 import io.github.riaanjutte.cbonline.data.OnlinePlayersApi
 import io.github.riaanjutte.cbonline.data.PilotStatsApi
@@ -37,5 +45,20 @@ class AppContainer(context: Context) {
     )
     val friendsStore = FriendsStore(dataStore)
     val squadsStore = SquadsStore(dataStore)
+
+    val reminderStore = ReminderStore(dataStore)
+    val reminderAlarms = AlarmReminderAlarms(context.applicationContext)
+    val missionReminders = MissionReminders(reminderStore, reminderAlarms)
+
+    private val friendAlertsStore = FriendAlertsStore(dataStore)
+    val friendAlertSwitch = FriendAlertSwitch(friendAlertsStore, WorkManagerAlertScheduler(context.applicationContext))
+    private val appContext = context.applicationContext
+
+    /** One background friend check; [inForeground] keeps it quiet while the app is on screen. */
+    fun friendAlertCheck(inForeground: () -> Boolean) = FriendAlertCheck(
+        playersApi, friendsStore, squadsStore, friendAlertsStore,
+        notify = { Notifications.showFriendsOnline(appContext, it) },
+        inForeground = inForeground
+    )
     val updateChecker = UpdateChecker(client, json, dataStore, userAgent)
 }

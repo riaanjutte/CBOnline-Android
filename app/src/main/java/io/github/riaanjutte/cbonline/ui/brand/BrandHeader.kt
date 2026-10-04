@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -25,6 +26,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import io.github.riaanjutte.cbonline.R
 import io.github.riaanjutte.cbonline.ui.AboutDialog
@@ -35,7 +39,12 @@ private val BANNER_EDGE = Color(0xFF424242)
 
 /** Pinned Combat Box wordmark below the status bar, with the ⋮ menu (About) over its right end. */
 @Composable
-fun BrandHeader(versionName: String, onOpenUrl: (String) -> Unit) {
+fun BrandHeader(
+    versionName: String,
+    onOpenUrl: (String) -> Unit,
+    friendAlertsOn: Boolean = false,
+    onToggleFriendAlerts: () -> Unit = {}
+) {
     var menuOpen by remember { mutableStateOf(false) }
     var aboutOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -55,6 +64,18 @@ fun BrandHeader(versionName: String, onOpenUrl: (String) -> Unit) {
                     Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options), tint = CbColors.Text)
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    // An on/off item: a check shows when alerts are on, and TalkBack hears it as a checkbox
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.friend_alerts)) },
+                        onClick = { menuOpen = false; onToggleFriendAlerts() },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Filled.Check, contentDescription = null,
+                                tint = if (friendAlertsOn) CbColors.Amber else CbColors.Panel
+                            )
+                        },
+                        modifier = Modifier.semantics { toggleableState = ToggleableState(friendAlertsOn) }
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.about)) },
                         onClick = { menuOpen = false; aboutOpen = true }

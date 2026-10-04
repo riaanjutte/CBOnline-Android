@@ -7,7 +7,15 @@ import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.data.MissionSource
 import io.github.riaanjutte.cbonline.data.OnlinePlayer
 import io.github.riaanjutte.cbonline.data.PlayersSource
+import io.github.riaanjutte.cbonline.data.NextMission
 import io.github.riaanjutte.cbonline.data.SquadsRepository
+import io.github.riaanjutte.cbonline.notify.AlertScheduler
+import io.github.riaanjutte.cbonline.notify.FriendAlertSwitch
+import io.github.riaanjutte.cbonline.notify.FriendAlertsRepository
+import io.github.riaanjutte.cbonline.notify.MissionReminder
+import io.github.riaanjutte.cbonline.notify.MissionReminders
+import io.github.riaanjutte.cbonline.notify.ReminderAlarms
+import io.github.riaanjutte.cbonline.notify.ReminderRepository
 import io.github.riaanjutte.cbonline.data.UpdateInfo
 import io.github.riaanjutte.cbonline.data.UpdateSource
 import kotlinx.coroutines.CompletableDeferred
@@ -29,7 +37,9 @@ import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.ConnectException
 import java.net.UnknownHostException
+import java.time.Duration
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RosterViewModelTest {
@@ -100,7 +110,94 @@ class RosterViewModelTest {
     private val friends = FakeFriends()
     private val squads = FakeSquads()
 
-    private fun vm(updates: UpdateSource = FakeUpdates()) = RosterViewModel(players, missions, friends, squads, updates, "1.0.0")
+    private class FakeReminderStore : ReminderRepository {
+        override val reminder = MutableStateFlow<MissionReminder?>(null)
+        override suspend fun set(r: MissionReminder) { reminder.value = r }
+        override suspend fun clear() { reminder.value = null }
+    }
+
+    private class FakeAlarms : ReminderAlarms {
+        val scheduled = mutableListOf<MissionReminder>()
+        var cancels = 0
+        override fun schedule(r: MissionReminder) { scheduled += r }
+        override fun cancel() { cancels++ }
+    }
+
+    private class FakeAlertsStore : FriendAlertsRepository {
+        override val enabled = MutableStateFlow(false)
+        override val lastOnline = MutableStateFlow(emptySet<String>())
+        override suspend fun setEnabled(on: Boolean) { enabled.value = on }
+        override suspend fun setLastOnline(keys: Set<String>) { lastOnline.value = keys }
+    }
+
+    private class FakeScheduler : AlertScheduler {
+        var running = false
+        override fun start() { running = true }
+        override fun stop() { running = false }
+    }
+
+    private val reminderStore = FakeReminderStore()
+    private val alarms = FakeAlarms()
+    private val alertsStore = FakeAlertsStore()
+    private val scheduler = FakeScheduler()
+
+    private fun vm(updates: UpdateSource = FakeUpdates()) = RosterViewModel(
+        players, missions, friends, squads,
+        MissionReminders(reminderStore, alarms), FriendAlertSwitch(alertsStore, scheduler),
+        updates, "1.0.0"
+    )
+
+    private fun missionWithNext(name: String, startsIn: Duration) = MissionInfo(
+        "Now", null, Instant.now().plus(Duration.ofHours(1)), null, NextMission(name, Instant.now().plus(startsIn).truncatedTo(ChronoUnit.SECONDS), null, null)
+    )
+
+    @Test
+    fun `the bell sets a reminder for the next mission and clears it again`() = runTest {
+        val mission = missionWithNext("Paravane", Duration.ofMinutes(30))
+        missions.next = { mission }
+        val vm = vm()
+        subscribe(vm)
+        vm.toggleReminder()
+        runCurrent()
+        assertEquals(MissionReminder("Paravane", mission.next!!.expectedStart), vm.state.value.reminder)
+        assertEquals(1, alarms.scheduled.size)
+        vm.toggleReminder()
+        runCurrent()
+        assertNull(vm.state.value.reminder)
+        assertEquals(1, alarms.cancels)
+    }
+
+    @Test
+    fun `the reminder follows the mission feed when the start moves`() = runTest {
+        val first = missionWithNext("Paravane", Duration.ofMinutes(30))
+        missions.next = { first }
+        val vm = vm()
+        subscribe(vm)
+        vm.toggleReminder()
+        runCurrent()
+        val moved = missionWithNext("Paravane", Duration.ofMinutes(50))
+        missions.next = { moved }
+        advanceTimeBy(60_001)
+        assertEquals(moved.next!!.expectedStart, vm.state.value.reminder!!.start)
+        assertEquals(moved.next!!.expectedStart, alarms.scheduled.last().start)
+    }
+
+    @Test
+    fun `switching friend alerts on remembers who is already online and starts the checks`() = runTest {
+        players.next = { listOf(OnlinePlayer("Bob", Coalition.Axis, "00:10"), OnlinePlayer("Carol", Coalition.Allied, "00:10")) }
+        friends.friends.value = setOf("bob")
+        val vm = vm()
+        subscribe(vm)
+        vm.setFriendAlerts(true)
+        runCurrent()
+        assertTrue(vm.state.value.friendAlertsOn)
+        assertEquals(setOf("bob"), alertsStore.lastOnline.value)
+        assertTrue(scheduler.running)
+        vm.setFriendAlerts(false)
+        runCurrent()
+        assertFalse(vm.state.value.friendAlertsOn)
+        assertFalse(scheduler.running)
+    }
 
     @Test
     fun `starring a squad lists its members under friends without fetching`() = runTest {

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar icon: the Combat Box cube as a white line drawing (Android uses only its shape) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M12,2.5L20.5,7.25L20.5,16.75L12,21.5L3.5,16.75L3.5,7.25Z M12,12L12,21.5 M12,12L3.5,7.25 M12,12L20.5,7.25"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+</vector>

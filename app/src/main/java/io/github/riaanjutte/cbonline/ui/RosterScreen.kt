@@ -63,16 +63,19 @@ fun RosterScreen(
     onToggleFriend: (String) -> Unit,
     onUnstarSquad: (String) -> Unit,
     onOpenStats: (String) -> Unit,
+    onToggleReminder: () -> Unit,
+    onToggleFriendAlerts: () -> Unit,
     onDismissUpdate: () -> Unit,
     onOpenUrl: (String) -> Unit
 ) {
     val actions = RowActions(onToggleFriend, onUnstarSquad, onOpenStats)
+    val bell = ReminderUi(on = state.reminder != null && state.reminder.missionName == state.mission?.next?.name, toggle = onToggleReminder)
     Box(Modifier.fillMaxSize()) {
         MapBackground()
         // Without a Scaffold, keep content clear of side navigation bars and cutouts in landscape;
         // the map stays full-bleed behind them
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))) {
-            BrandHeader(versionName, onOpenUrl)
+            BrandHeader(versionName, onOpenUrl, state.friendAlertsOn, onToggleFriendAlerts)
             PullToRefreshBox(
                 isRefreshing = state.isRefreshing,
                 onRefresh = onRefresh,
@@ -80,7 +83,7 @@ fun RosterScreen(
             ) {
                 val roster = state.roster
                 if (roster != null) {
-                    RosterList(roster, state, actions, onDismissUpdate, onOpenUrl)
+                    RosterList(roster, state, actions, bell, onDismissUpdate, onOpenUrl)
                 } else {
                     // No roster yet, loading or failed: the mission comes from a different source, so keep it
                     // on screen — including during each retry, which would otherwise flash a bare spinner.
@@ -88,7 +91,7 @@ fun RosterScreen(
                     LazyColumn(Modifier.fillMaxSize()) {
                         // Always present (an empty spacer until the mission arrives): an item inserted above the
                         // visible one would land off-screen, leaving the list scrolled past the mission card
-                        item(key = "mission") { MissionCard(state.mission, Modifier.padding(10.dp)) }
+                        item(key = "mission") { MissionCard(state.mission, Modifier.padding(10.dp), bell.on, bell.toggle) }
                         item(key = "status") {
                             Box(Modifier.fillParentMaxHeight(0.7f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                                 if (state.isLoading) {
@@ -104,6 +107,9 @@ fun RosterScreen(
         }
     }
 }
+
+/** The mission card's reminder bell. */
+private class ReminderUi(val on: Boolean, val toggle: () -> Unit)
 
 /** What a tap on a row can do. */
 private class RowActions(
@@ -143,6 +149,7 @@ private fun RosterList(
     roster: Roster,
     state: RosterUiState,
     actions: RowActions,
+    bell: ReminderUi,
     onDismissUpdate: () -> Unit,
     onOpenUrl: (String) -> Unit
 ) {
@@ -169,7 +176,7 @@ private fun RosterList(
                 Text(staleText, style = MaterialTheme.typography.bodyMedium, color = Color.White, modifier = Modifier.padding(12.dp, 8.dp))
             }
         }
-        RosterItems(roster, state.mission, updatedTime, titles, nobodyText, actions)
+        RosterItems(roster, state.mission, bell, updatedTime, titles, nobodyText, actions)
     }
 }
 
@@ -179,6 +186,7 @@ private class SectionTitles(val friends: String, val axis: String, val allied: S
 private fun ColumnScope.RosterItems(
     roster: Roster,
     mission: MissionInfo?,
+    bell: ReminderUi,
     updatedTime: String?,
     titles: SectionTitles,
     nobodyText: String,
@@ -191,7 +199,7 @@ private fun ColumnScope.RosterItems(
         contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 16.dp + navBarBottom)
     ) {
         // Always the first item, even without data, so it's never inserted above the visible list
-        item(key = "mission") { MissionCard(mission, Modifier.padding(bottom = 10.dp)) }
+        item(key = "mission") { MissionCard(mission, Modifier.padding(bottom = 10.dp), bell.on, bell.toggle) }
         item(key = "summary") { SummaryCard(roster, updatedTime, Modifier.padding(bottom = 10.dp)) }
         if (roster.total == 0) {
             item(key = "nobody") {

@@ -9,6 +9,10 @@ import io.github.riaanjutte.cbonline.data.MissionSource
 import io.github.riaanjutte.cbonline.data.OnlinePlayer
 import io.github.riaanjutte.cbonline.data.PlayersSource
 import io.github.riaanjutte.cbonline.data.SquadsRepository
+import io.github.riaanjutte.cbonline.notify.FriendAlertSwitch
+import io.github.riaanjutte.cbonline.notify.MissionReminder
+import io.github.riaanjutte.cbonline.notify.MissionReminders
+import io.github.riaanjutte.cbonline.notify.friendKey
 import io.github.riaanjutte.cbonline.data.UpdateInfo
 import io.github.riaanjutte.cbonline.data.UpdateSource
 import io.github.riaanjutte.cbonline.roster.Roster
@@ -42,7 +46,10 @@ data class RosterUiState(
     /** Last good mission info; independent of the roster's error state. */
     val mission: MissionInfo? = null,
     /** Starred squad tags, for the stats panel's Star / Unstar squad button. */
-    val squads: Set<String> = emptySet()
+    val squads: Set<String> = emptySet(),
+    /** The pending next-mission reminder (the bell on the mission card). */
+    val reminder: MissionReminder? = null,
+    val friendAlertsOn: Boolean = false
 )
 
 /**
@@ -70,6 +77,8 @@ class RosterViewModel(
     private val missions: MissionSource,
     private val friends: FriendsRepository,
     private val squads: SquadsRepository,
+    private val reminders: MissionReminders,
+    private val friendAlerts: FriendAlertSwitch,
     private val updates: UpdateSource,
     private val currentVersion: String
 ) : ViewModel() {
@@ -100,7 +109,8 @@ class RosterViewModel(
                 manual = withTimeoutOrNull(REFRESH_INTERVAL_MS) { manualRefresh.receive() } != null
             }
         }
-        combine(fetchState, friends.friends, squads.squads, updateState, missionState, ::toUiState).collect { send(it) }
+        val prefs = combine(friends.friends, squads.squads, reminders.reminder, friendAlerts.enabled, ::Prefs)
+        combine(fetchState, prefs, updateState, missionState, ::toUiState).collect { send(it) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RosterUiState())
 
     fun refresh() {
@@ -117,6 +127,18 @@ class RosterViewModel(
 
     fun unstarSquad(tag: String) {
         viewModelScope.launch { persist("Saving squad failed") { squads.remove(tag) } }
+    }
+
+    /** The bell: a reminder before the next mission, or cancel it. Notification permission is the screen's job. */
+    fun toggleReminder() {
+        val next = missionState.value?.next ?: return
+        viewModelScope.launch { persist("Saving reminder failed") { reminders.toggle(next, Instant.now()) } }
+    }
+
+    /** Friends already online when alerts are switched on don't alert; [state]'s roster says who they are. */
+    fun setFriendAlerts(on: Boolean) {
+        val onlineNow = state.value.roster?.friendsOnline.orEmpty().map { friendKey(it.nickname) }.toSet()
+        viewModelScope.launch { persist("Saving friend alerts failed") { friendAlerts.set(on, onlineNow) } }
     }
 
     fun dismissUpdate() {
@@ -153,7 +175,10 @@ class RosterViewModel(
     /** Keeps the last good mission on any failure; mission problems never touch the roster's state. */
     private suspend fun fetchMission() {
         try {
-            missionState.value = missions.fetch()
+            val mission = missions.fetch()
+            missionState.value = mission
+            // A start time that moved, or a different next mission, updates or drops the reminder
+            persist("Updating reminder failed") { reminders.reconcile(mission.next, Instant.now()) }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -181,15 +206,19 @@ class RosterViewModel(
         }
     }
 
-    private fun toUiState(
-        fetch: FetchState,
-        friendNames: Set<String>,
-        squadTags: Set<String>,
-        update: UpdateInfo?,
-        mission: MissionInfo?
-    ) = RosterUiState(
-        roster = fetch.players?.let { RosterBuilder.build(it, friendNames, squadTags) },
-        squads = squadTags,
+    /** Saved choices that shape the screen. */
+    private data class Prefs(
+        val friendNames: Set<String>,
+        val squadTags: Set<String>,
+        val reminder: MissionReminder?,
+        val friendAlertsOn: Boolean
+    )
+
+    private fun toUiState(fetch: FetchState, prefs: Prefs, update: UpdateInfo?, mission: MissionInfo?) = RosterUiState(
+        roster = fetch.players?.let { RosterBuilder.build(it, prefs.friendNames, prefs.squadTags) },
+        squads = prefs.squadTags,
+        reminder = prefs.reminder,
+        friendAlertsOn = prefs.friendAlertsOn,
         lastUpdated = fetch.lastUpdated,
         isLoading = fetch.isLoading,
         isRefreshing = fetch.isRefreshing,

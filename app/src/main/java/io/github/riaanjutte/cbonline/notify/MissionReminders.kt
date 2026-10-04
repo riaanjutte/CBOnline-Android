@@ -66,7 +66,8 @@ class MissionReminders(private val store: ReminderRepository, private val alarms
     suspend fun reconcile(next: NextMission?, now: Instant) {
         val saved = store.reminder.first() ?: return
         when (val action = reconcile(saved, next, now)) {
-            ReminderAction.Keep -> Unit
+            // Re-arm: Android drops an app's alarms when it's force-stopped. Same request, so it replaces itself
+            ReminderAction.Keep -> alarms.schedule(saved)
             ReminderAction.Drop -> cancel()
             is ReminderAction.Move -> {
                 store.set(action.reminder)
