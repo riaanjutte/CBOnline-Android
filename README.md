@@ -21,7 +21,7 @@ See who's flying on [Combat Box](https://combatbox.net) (IL-2 Great Battles) bef
 - **What's next.** The next mission shows when it starts (in your phone's time), with its own date and weather.
 - **Your friends.** Tap the star next to a name, and that pilot is pinned in a Friends section at the top. When they aren't flying, they're shown there as offline.
 - **Pilot stats.** Tap any pilot to see their lifetime record: flight hours, kills and best streaks, their most-flown aircraft, and how they do against other players.
-- **Squads.** In a pilot's stats, star their squad tag (like =JG52=), and everyone online with that tag shows under Friends too.
+- **Squads.** In a pilot's stats, star their squad tag (like =JG52=), and everyone online with that tag shows under Friends too, with an amber outline star.
 - **Fresh data.** The app refreshes every minute while it's open. Pull down to refresh straight away.
 - **Mission reminder.** Tap the bell next to the next mission, and you get a notification 10 minutes before it starts. On newer Android versions, switch on “Alarms & reminders” when asked, so it comes on time even when your phone is asleep.
 - **Friend alerts.** Switch them on in the ⋮ menu to get a notification when starred pilots or squad members come online, even when the app isn't open. Android runs the check about every 15 minutes while your phone is in use; while it's asleep, or if you rarely open the app, alerts can come much later.

@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,13 +50,17 @@ fun PlayerRow(row: RosterRow, showSideTag: Boolean, onToggle: () -> Unit, onOpen
             .padding(start = 12.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // The star shows squad membership only as a colour, so TalkBack hears it with the name
+        val squadNote = row.squad?.let { stringResource(R.string.in_squad_cd, row.nickname, it) }
         Text(
             text = row.nickname,
             style = MaterialTheme.typography.bodyMedium,
             color = CbColors.Text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .then(if (squadNote != null) Modifier.semantics { contentDescription = squadNote } else Modifier)
         )
         if (showSideTag) {
             Spacer(Modifier.width(8.dp))
@@ -71,7 +75,10 @@ fun PlayerRow(row: RosterRow, showSideTag: Boolean, onToggle: () -> Unit, onOpen
         }
         Spacer(Modifier.width(8.dp))
         Text(text = row.timeLabel, style = MaterialTheme.typography.bodyMedium, color = CbColors.Muted)
-        StarButton(starred = row.isFriend, description = stringResource(if (row.isFriend) R.string.unstar_cd else R.string.star_cd, row.nickname), onToggle = onToggle)
+        StarButton(
+            starred = row.isFriend, viaSquad = row.squad != null,
+            description = stringResource(R.string.star_cd, row.nickname), onToggle = onToggle
+        )
     }
 }
 
@@ -96,7 +103,7 @@ fun OfflineFriendRow(nickname: String, onToggle: () -> Unit, onOpen: () -> Unit,
         )
         Spacer(Modifier.width(8.dp))
         Text(text = stringResource(R.string.offline), style = MaterialTheme.typography.bodyMedium, color = CbColors.Muted)
-        StarButton(starred = true, description = stringResource(R.string.unstar_cd, nickname), onToggle = onToggle)
+        StarButton(starred = true, description = stringResource(R.string.star_cd, nickname), onToggle = onToggle)
     }
 }
 
@@ -117,7 +124,7 @@ fun OfflineSquadRow(tag: String, onUnstar: () -> Unit, modifier: Modifier = Modi
         )
         Spacer(Modifier.width(8.dp))
         Text(text = stringResource(R.string.squad_offline), style = MaterialTheme.typography.bodyMedium, color = CbColors.Muted)
-        StarButton(starred = true, description = stringResource(R.string.squad_unstar_tag, tag), onToggle = onUnstar)
+        StarButton(starred = true, description = stringResource(R.string.squad_star_tag, tag), onToggle = onUnstar)
     }
 }
 
@@ -142,14 +149,17 @@ fun SectionHeader(title: String, edge: Color, textColor: Color, position: Segmen
     }
 }
 
-/** [description] names the action ("Star Hans" / "Unstar Hans"), so TalkBack also tells whether it's on. */
+/**
+ * An on/off switch, so TalkBack reads its [description] ("Star Hans") with whether it's on. Filled when starred;
+ * an amber outline when only the pilot's squad is starred ([viaSquad]); tapping that stars the pilot as well.
+ */
 @Composable
-private fun StarButton(starred: Boolean, description: String, onToggle: () -> Unit) {
-    IconButton(onClick = onToggle) {
+private fun StarButton(starred: Boolean, description: String, onToggle: () -> Unit, viaSquad: Boolean = false) {
+    IconToggleButton(checked = starred, onCheckedChange = { onToggle() }) {
         Icon(
             painter = painterResource(if (starred) R.drawable.ic_star else R.drawable.ic_star_outline),
             contentDescription = description,
-            tint = if (starred) StarColor else CbColors.StarOff
+            tint = if (starred || viaSquad) StarColor else CbColors.StarOff
         )
     }
 }

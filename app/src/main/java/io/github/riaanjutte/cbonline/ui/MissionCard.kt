@@ -16,7 +16,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -100,10 +100,11 @@ fun MissionCard(
 @Composable
 private fun ReminderBell(on: Boolean, missionName: String, onToggle: () -> Unit) {
     // Pulled into the label's line height, so the bell doesn't make the card taller
-    IconButton(onClick = onToggle, modifier = Modifier.size(32.dp)) {
+    // An on/off switch: TalkBack reads "Remind me 10 minutes before …" with whether it's on
+    IconToggleButton(checked = on, onCheckedChange = { onToggle() }, modifier = Modifier.size(32.dp)) {
         Icon(
             imageVector = if (on) Icons.Filled.Notifications else Icons.Outlined.Notifications,
-            contentDescription = stringResource(if (on) R.string.reminder_cancel_cd else R.string.reminder_set_cd, missionName),
+            contentDescription = stringResource(R.string.reminder_set_cd, missionName),
             tint = if (on) CbColors.Amber else CbColors.Muted,
             modifier = Modifier.size(20.dp)
         )

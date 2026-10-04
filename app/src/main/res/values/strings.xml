@@ -27,7 +27,6 @@
     <string name="side_unassigned">Not spawned</string>
     <string name="offline">offline</string>
     <string name="star_cd">Star %1$s</string>
-    <string name="unstar_cd">Unstar %1$s</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_source">github.com/riaanjutte/CBOnline-Android</string>
     <string name="close">Close</string>
@@ -77,10 +76,10 @@
     <string name="squad_dialog_confirm">Star</string>
     <string name="cancel">Cancel</string>
     <string name="squad_offline">squad · none online</string>
+    <string name="in_squad_cd">%1$s, in starred squad %2$s</string>
 
     <!-- Reminders and friend alerts -->
     <string name="reminder_set_cd">Remind me 10 minutes before %1$s</string>
-    <string name="reminder_cancel_cd">Cancel the reminder for %1$s</string>
     <string name="friend_alerts">Friend alerts</string>
     <string name="notifications_off">Notifications are off for CB Online. You can allow them in Android settings.</string>
     <string name="exact_alarms_prompt">Switch on \"Alarms &amp; reminders\" for CB Online so mission reminders come on time.</string>
