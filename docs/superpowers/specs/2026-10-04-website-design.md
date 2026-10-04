@@ -26,9 +26,11 @@ two taps, and finds all the install help they need without visiting GitHub.
 
 One page, `site/index.html`, `lang="en"`, always dark. Sections in order:
 
-1. **Top bar.** The wordmark (links to the top of the page, alt text "Combat Box"). From 600 px wide, the links
-   **Features · Install · FAQ** on the right, jumping to `#features`, `#install` and `#faq`. Narrower screens
-   show the wordmark only. The bar stays at the top while scrolling (`position: sticky`).
+1. **Banner and links** *(changed after launch at the maintainer's request)*. The full wordmark banner edge to
+   edge across the top (alt text "Combat Box"), like the app's header, with a red line under it; on screens wider
+   than the 1920 px image it's centred on the banner's edge colour `#424242`. Under it, a slim bar with the links
+   **Features · Install · FAQ** (all widths), jumping to `#features`, `#install` and `#faq`. The banner scrolls
+   away; the link bar stays at the top (`position: sticky`).
 2. **Hero** (`#top`), over the map background.
    - Amber label **For Android**.
    - Headline **Who's flying on Combat Box?**

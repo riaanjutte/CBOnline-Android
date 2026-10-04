@@ -62,6 +62,15 @@ test("sections and nav", () => {
   for (const s of sections) assert.match(s, /<h2\b/, `section without h2: ${s.slice(0, 60)}`);
 });
 
+test("full-width banner header with the nav under it", () => {
+  const banner = html.match(/<header\b[^>]*\bclass="banner"[^>]*>[\s\S]*?<\/header>/)?.[0];
+  assert.ok(banner, "no banner header");
+  assert.match(banner, /<img\b[^>]*\bsrc="assets\/wordmark\.webp"[^>]*\balt="Combat Box"/);
+  assert.doesNotMatch(banner, /<nav\b/, "nav belongs under the banner, not in it");
+  assert.match(html.match(/<nav\b[^>]*>/)?.[0] ?? "", /\bclass="navbar"/);
+  assert.ok(html.indexOf(banner) < html.indexOf("<nav"), "nav comes after the banner");
+});
+
 test("download fallback", () => {
   const button = html.match(/<a\b[^>]*\bid="download"[^>]*>[\s\S]*?<\/a>/)?.[0];
   assert.ok(button, "no #download link");

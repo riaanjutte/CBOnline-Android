@@ -48,39 +48,37 @@ a { color: var(--sky); text-underline-offset: 0.15em; }
 /* Keep anchor targets clear of the sticky top bar */
 [id] { scroll-margin-top: 5rem; }
 
-/* Top bar */
-.topbar {
+/* Banner: the wordmark edge to edge, like the app's header. Wider than the image, the sides
+   take the banner's edge colour. */
+.banner {
+  background: #424242;
+  border-bottom: 3px solid var(--red);
+}
+.banner img { display: block; width: 100%; max-width: 1920px; margin: 0 auto; }
+
+/* Section links: a slim bar under the banner that stays at the top while scrolling */
+.navbar {
   position: sticky;
   top: 0;
   z-index: 10;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.2rem 2rem;
+  padding: 0.55rem 1rem;
   background: rgba(22, 24, 23, 0.92);
   border-bottom: 1px solid var(--edge);
   backdrop-filter: blur(6px);
 }
-.topbar-inner {
-  max-width: var(--width);
-  margin: 0 auto;
-  padding: 0.6rem 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-.brand { display: block; min-width: 0; }
-.brand img { display: block; width: 15rem; max-width: 100%; }
-.topbar nav { display: none; gap: 1.4rem; }
-.topbar nav a {
+.navbar a {
   font-family: var(--display);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   font-size: 0.95rem;
   color: var(--muted);
   text-decoration: none;
 }
-.topbar nav a:hover { color: var(--text); }
-@media (min-width: 600px) {
-  .topbar nav { display: flex; }
-}
+.navbar a:hover { color: var(--text); }
 
 /* Hero: map behind a dark gradient; the plain background shows if the image is missing */
 .hero {
