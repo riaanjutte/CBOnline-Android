@@ -2,6 +2,7 @@ package io.github.riaanjutte.cbonline.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -45,6 +46,19 @@ class ThemeContrastTest {
             assertLegible("tertiary links", tertiary, surface)
             assertLegible("onPrimary", onPrimary, primary)
             assertLegible("onError", onError, error)
+        }
+    }
+
+    @Test
+    fun `menus, sheets and dialogs use the brand panel, not Material's purple defaults`() {
+        with(CbDarkScheme) {
+            mapOf(
+                "surfaceContainerLowest" to surfaceContainerLowest, "surfaceContainerLow" to surfaceContainerLow,
+                "surfaceContainer" to surfaceContainer, "surfaceContainerHigh" to surfaceContainerHigh,
+                "surfaceContainerHighest" to surfaceContainerHighest, "surfaceBright" to surfaceBright, "surfaceDim" to surfaceDim
+            ).forEach { (name, c) -> assertEquals(name, CbColors.Panel, c) }
+            // Elevated surfaces are tinted with surfaceTint; the panel colour makes that a no-op
+            assertEquals("surfaceTint", CbColors.Panel, surfaceTint)
         }
     }
 }

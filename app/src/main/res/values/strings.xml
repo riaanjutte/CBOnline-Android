@@ -6,8 +6,6 @@
     <string name="pilots_online">Pilots online</string>
     <string name="current_mission">Current mission</string>
     <string name="next_label">Next · %1$s</string>
-    <string name="sides">%1$d Axis · %2$d Allied</string>
-    <string name="sides_unassigned">%1$d Axis · %2$d Allied · %3$d not spawned</string>
     <string name="friends_online">Friends: %1$d of %2$d online</string>
     <string name="updated_at">Updated %1$s</string>
     <string name="nobody_flying">Nobody\'s flying right now.</string>
@@ -28,9 +26,40 @@
     <string name="star_cd">Star %1$s</string>
     <string name="unstar_cd">Unstar %1$s</string>
     <string name="about_version">Version %1$s</string>
-    <string name="about_data">Player data: il2statsapi.combatbox.net</string>
-    <string name="about_mission_data">Mission data: campaign-data.combatbox.net</string>
     <string name="about_source">github.com/riaanjutte/CBOnline-Android</string>
     <string name="close">Close</string>
     <string name="in_game">In-game: %1$s</string>
+
+    <!-- Pilot stats panel -->
+    <string name="show_stats">Show stats</string>
+    <string name="stats_lifetime">Lifetime</string>
+    <string name="stats_flight_hours">Flight hours</string>
+    <string name="stats_score">Score</string>
+    <string name="stats_air_kills">Air kills</string>
+    <string name="stats_ground_kills">Ground kills</string>
+    <string name="stats_best_streak">Best streak %1$s</string>
+    <string name="stats_deaths">Deaths</string>
+    <string name="stats_aircraft_lost">Aircraft lost</string>
+    <string name="stats_kills_per_loss">Air kills per aircraft lost</string>
+    <string name="stats_kills_per_hour">Air kills per hour</string>
+    <string name="stats_sorties">Sorties</string>
+    <string name="stats_sorties_split">%1$s Allied · %2$s Axis</string>
+    <string name="stats_top_aircraft">Top aircraft</string>
+    <string name="stats_hours">%1$s h</string>
+    <string name="stats_vs_players">Against players</string>
+    <string name="stats_pvp_line">%1$s victories · %2$s defeats · air-to-air win/loss %3$s</string>
+    <string name="stats_ai_victories">%1$s victories against AI</string>
+    <string name="stats_not_found">No stats found for this pilot.</string>
+    <string name="stats_failed">Couldn\'t load stats</string>
+
+    <!-- Squads -->
+    <string name="squad_star">Star squad</string>
+    <string name="squad_star_tag">Star squad %1$s</string>
+    <string name="squad_unstar_tag">Unstar squad %1$s</string>
+    <string name="squad_dialog_title">Star a squad</string>
+    <string name="squad_dialog_text">Every online pilot whose name contains this tag shows under Friends.</string>
+    <string name="squad_dialog_label">Squad tag</string>
+    <string name="squad_dialog_confirm">Star</string>
+    <string name="cancel">Cancel</string>
+    <string name="squad_offline">squad · none online</string>
 </resources>

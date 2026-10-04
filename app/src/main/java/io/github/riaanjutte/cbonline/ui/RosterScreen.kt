@@ -61,9 +61,12 @@ fun RosterScreen(
     versionName: String,
     onRefresh: () -> Unit,
     onToggleFriend: (String) -> Unit,
+    onToggleSquad: (String) -> Unit,
+    onOpenStats: (String) -> Unit,
     onDismissUpdate: () -> Unit,
     onOpenUrl: (String) -> Unit
 ) {
+    val actions = RowActions(onToggleFriend, onToggleSquad, onOpenStats)
     Box(Modifier.fillMaxSize()) {
         MapBackground()
         // Without a Scaffold, keep content clear of side navigation bars and cutouts in landscape;
@@ -77,17 +80,20 @@ fun RosterScreen(
             ) {
                 val roster = state.roster
                 if (roster != null) {
-                    RosterList(roster, state, onToggleFriend, onDismissUpdate, onOpenUrl)
+                    RosterList(roster, state, actions, onDismissUpdate, onOpenUrl)
                 } else {
                     // No roster yet, loading or failed: the mission comes from a different source, so keep it
-                    // on screen — including during each retry, which would otherwise flash a bare spinner
-                    Column(Modifier.fillMaxSize()) {
-                        if (state.mission != null) MissionCard(state.mission, Modifier.padding(10.dp))
-                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            if (state.isLoading) {
-                                CircularProgressIndicator(color = CbColors.Amber)
-                            } else {
-                                LoadError(state.errorMessage, onRefresh)
+                    // on screen — including during each retry, which would otherwise flash a bare spinner.
+                    // A list, not a plain column, so pull-to-refresh works here too and nothing is cut off in landscape
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        if (state.mission != null) item(key = "mission") { MissionCard(state.mission, Modifier.padding(10.dp)) }
+                        item(key = "status") {
+                            Box(Modifier.fillParentMaxHeight(0.7f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                if (state.isLoading) {
+                                    CircularProgressIndicator(color = CbColors.Amber)
+                                } else {
+                                    LoadError(state.errorMessage, onRefresh)
+                                }
                             }
                         }
                     }
@@ -97,10 +103,17 @@ fun RosterScreen(
     }
 }
 
+/** What a tap on a row can do. */
+private class RowActions(
+    val toggleFriend: (String) -> Unit,
+    val toggleSquad: (String) -> Unit,
+    val openStats: (String) -> Unit
+)
+
 @Composable
 private fun LoadError(detail: String?, onRetry: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxWidth().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -121,7 +134,7 @@ private fun LoadError(detail: String?, onRetry: () -> Unit) {
 private fun RosterList(
     roster: Roster,
     state: RosterUiState,
-    onToggleFriend: (String) -> Unit,
+    actions: RowActions,
     onDismissUpdate: () -> Unit,
     onOpenUrl: (String) -> Unit
 ) {
@@ -148,7 +161,7 @@ private fun RosterList(
                 Text(staleText, style = MaterialTheme.typography.bodyMedium, color = Color.White, modifier = Modifier.padding(12.dp, 8.dp))
             }
         }
-        RosterItems(roster, state.mission, updatedTime, titles, nobodyText, onToggleFriend)
+        RosterItems(roster, state.mission, updatedTime, titles, nobodyText, actions)
     }
 }
 
@@ -161,7 +174,7 @@ private fun ColumnScope.RosterItems(
     updatedTime: String?,
     titles: SectionTitles,
     nobodyText: String,
-    onToggleFriend: (String) -> Unit
+    actions: RowActions
 ) {
     // Edge-to-edge without a Scaffold: keep the last rows clear of the navigation bar
     val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -183,23 +196,35 @@ private fun ColumnScope.RosterItems(
                 )
             }
         }
-        if (roster.starredCount > 0) {
-            // Online and offline friends form one continuous panel under one header
-            val online = roster.friendsOnline.size
-            val pos = sectionPositions(online + roster.friendsOffline.size)
+        val online = roster.friendsOnline.size
+        val offline = roster.friendsOffline.size
+        val squadsOffline = roster.squadsOffline.size
+        if (online + offline + squadsOffline > 0) {
+            // Friends online, starred pilots offline and squads with nobody on form one panel under one header
+            val pos = sectionPositions(online + offline + squadsOffline)
             stickyHeader(key = "header:friends") { SectionHeader(titles.friends, CbColors.Amber, CbColors.Amber, pos[0]) }
             itemsIndexed(roster.friendsOnline, key = { i, r -> "friends:$i:${r.nickname}" }) { i, row ->
-                PlayerRow(row, showSideTag = true, onToggle = { onToggleFriend(row.nickname) }, Modifier.panelSegment(pos[i + 1]))
+                PlayerRow(
+                    row, showSideTag = true,
+                    onToggle = { actions.toggleFriend(row.nickname) }, onOpen = { actions.openStats(row.nickname) },
+                    modifier = Modifier.panelSegment(pos[i + 1])
+                )
             }
             itemsIndexed(roster.friendsOffline, key = { i, name -> "friends-offline:$i:$name" }) { i, name ->
-                OfflineFriendRow(name, onToggle = { onToggleFriend(name) }, Modifier.panelSegment(pos[online + i + 1]))
+                OfflineFriendRow(
+                    name, onToggle = { actions.toggleFriend(name) }, onOpen = { actions.openStats(name) },
+                    modifier = Modifier.panelSegment(pos[online + i + 1])
+                )
+            }
+            itemsIndexed(roster.squadsOffline, key = { i, tag -> "squads-offline:$i:$tag" }) { i, tag ->
+                OfflineSquadRow(tag, onUnstar = { actions.toggleSquad(tag) }, modifier = Modifier.panelSegment(pos[online + offline + i + 1]))
             }
             item(key = "gap:friends") { Spacer(Modifier.height(10.dp)) }
         }
-        sideSection("axis", titles.axis, Coalition.Axis, roster.axis, onToggleFriend)
-        sideSection("allied", titles.allied, Coalition.Allied, roster.allied, onToggleFriend)
+        sideSection("axis", titles.axis, Coalition.Axis, roster.axis, actions)
+        sideSection("allied", titles.allied, Coalition.Allied, roster.allied, actions)
         if (roster.unassigned.isNotEmpty()) {
-            sideSection("unassigned", titles.unassigned, Coalition.Unassigned, roster.unassigned, onToggleFriend)
+            sideSection("unassigned", titles.unassigned, Coalition.Unassigned, roster.unassigned, actions)
         }
     }
 }
@@ -209,13 +234,17 @@ private fun LazyListScope.sideSection(
     title: String,
     side: Coalition,
     rows: List<RosterRow>,
-    onToggleFriend: (String) -> Unit
+    actions: RowActions
 ) {
     val pos = sectionPositions(rows.size)
     stickyHeader(key = "header:$section") { SectionHeader(title, side.color(), side.textColor(), pos[0]) }
     // Keys include section and index: the API can list the same nickname twice
     itemsIndexed(rows, key = { i, r -> "$section:$i:${r.nickname}" }) { i, row ->
-        PlayerRow(row, showSideTag = false, onToggle = { onToggleFriend(row.nickname) }, Modifier.panelSegment(pos[i + 1]))
+        PlayerRow(
+            row, showSideTag = false,
+            onToggle = { actions.toggleFriend(row.nickname) }, onOpen = { actions.openStats(row.nickname) },
+            modifier = Modifier.panelSegment(pos[i + 1])
+        )
     }
     item(key = "gap:$section") { Spacer(Modifier.height(10.dp)) }
 }

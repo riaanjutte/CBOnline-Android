@@ -37,8 +37,6 @@ fun AboutDialog(versionName: String, onOpenUrl: (String) -> Unit, onClose: () ->
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.about_version, versionName), style = MaterialTheme.typography.bodyMedium, color = CbColors.Muted)
-                Text(stringResource(R.string.about_data), style = MaterialTheme.typography.bodyMedium, color = CbColors.Text)
-                Text(stringResource(R.string.about_mission_data), style = MaterialTheme.typography.bodyMedium, color = CbColors.Text)
                 Text(
                     stringResource(R.string.about_source),
                     style = MaterialTheme.typography.bodyMedium,

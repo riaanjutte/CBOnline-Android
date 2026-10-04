@@ -20,6 +20,8 @@ See who's flying on [Combat Box](https://combatbox.net) (IL-2 Great Battles) bef
 - **The current mission.** You get its name, a countdown to the end, the in-game date and time, and the weather.
 - **What's next.** The next mission shows when it starts (in your phone's time), with its own date and weather.
 - **Your friends.** Tap the star next to a name, and that pilot is pinned in a Friends section at the top. When they aren't flying, they're shown there as offline.
+- **Pilot stats.** Tap any pilot to see their lifetime record: flight hours, kills and best streaks, their most-flown aircraft, and how they do against other players.
+- **Squads.** In a pilot's stats, star their squad tag (like =JG52=), and everyone online with that tag shows under Friends too.
 - **Fresh data.** The app refreshes every minute while it's open. Pull down to refresh straight away.
 - **Update notices.** The app tells you when a new version is out.
 
@@ -67,7 +69,7 @@ No. It only refreshes while it's on screen and stops when you leave it. It never
 No. There's nothing to sign in to, and the only access the app needs is to the internet.
 
 **What does it send or collect?**
-Nothing about you. It reads Combat Box's public player and mission data and asks GitHub whether there's a newer version. Your starred friends are stored only on your phone.
+Nothing about you. It reads Combat Box's public player and mission data and asks GitHub whether there's a newer version. Your starred friends and squads are stored only on your phone.
 
 **A red bar says "Couldn't refresh".**
 The latest refresh failed, so you're seeing the last list that loaded, and the bar gives its time. The app keeps trying every minute, and you can pull down to try again now.
@@ -81,9 +83,8 @@ Stars follow the in-game name, ignoring capitals. If your friend changed their n
 **I found a bug or have an idea.**
 Please [open an issue](https://github.com/riaanjutte/CBOnline-Android/issues).
 
-## Data and credits
+## Credits
 
-- Player data comes from il2statsapi.combatbox.net, and mission data from campaign-data.combatbox.net.
 - The Combat Box logo, wordmark and map artwork are used with permission.
 - The app uses the [Oswald](https://fonts.google.com/specimen/Oswald) typeface, under the [SIL Open Font License 1.1](app/src/main/assets/licenses/OFL-Oswald.txt).
 
