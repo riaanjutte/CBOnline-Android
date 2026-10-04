@@ -48,6 +48,13 @@ class ReminderPlannerTest {
         assertEquals(ReminderAction.Keep, reconcile(MissionReminder("Paravane", at(5)), next("Paravane", 5), now))
 
     @Test
+    fun `a reminder is never shown once its mission has started`() {
+        assertTrue(shouldShowReminder(at(1), now))
+        assertFalse(shouldShowReminder(now, now))
+        assertFalse(shouldShowReminder(at(-5), now))
+    }
+
+    @Test
     fun `no next mission in the feed keeps the reminder`() =
         assertEquals(ReminderAction.Keep, reconcile(MissionReminder("Paravane", at(30)), null, now))
 }

@@ -137,7 +137,8 @@ class RosterViewModel(
 
     /** Friends already online when alerts are switched on don't alert; [state]'s roster says who they are. */
     fun setFriendAlerts(on: Boolean) {
-        val onlineNow = state.value.roster?.friendsOnline.orEmpty().map { friendKey(it.nickname) }.toSet()
+        // Null when no roster has loaded: then the first background check records who's online instead
+        val onlineNow = state.value.roster?.friendsOnline?.map { friendKey(it.nickname) }?.toSet()
         viewModelScope.launch { persist("Saving friend alerts failed") { friendAlerts.set(on, onlineNow) } }
     }
 

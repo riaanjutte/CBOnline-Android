@@ -125,9 +125,9 @@ class RosterViewModelTest {
 
     private class FakeAlertsStore : FriendAlertsRepository {
         override val enabled = MutableStateFlow(false)
-        override val lastOnline = MutableStateFlow(emptySet<String>())
+        override val lastOnline = MutableStateFlow<Set<String>?>(emptySet())
         override suspend fun setEnabled(on: Boolean) { enabled.value = on }
-        override suspend fun setLastOnline(keys: Set<String>) { lastOnline.value = keys }
+        override suspend fun setLastOnline(keys: Set<String>?) { lastOnline.value = keys }
     }
 
     private class FakeScheduler : AlertScheduler {

@@ -23,8 +23,8 @@ See who's flying on [Combat Box](https://combatbox.net) (IL-2 Great Battles) bef
 - **Pilot stats.** Tap any pilot to see their lifetime record: flight hours, kills and best streaks, their most-flown aircraft, and how they do against other players.
 - **Squads.** In a pilot's stats, star their squad tag (like =JG52=), and everyone online with that tag shows under Friends too.
 - **Fresh data.** The app refreshes every minute while it's open. Pull down to refresh straight away.
-- **Mission reminder.** Tap the bell next to the next mission, and you get a notification 10 minutes before it starts.
-- **Friend alerts.** Switch them on in the ⋮ menu to get a notification when starred pilots or squad members come online, even with the app closed. It checks about every 15 minutes, sometimes later when your phone is idle.
+- **Mission reminder.** Tap the bell next to the next mission, and you get a notification 10 minutes before it starts. On newer Android versions, switch on “Alarms & reminders” when asked, so it comes on time even when your phone is asleep.
+- **Friend alerts.** Switch them on in the ⋮ menu to get a notification when starred pilots or squad members come online, even when the app isn't open. Android runs the check about every 15 minutes while your phone is in use; while it's asleep, or if you rarely open the app, alerts can come much later.
 - **Update notices.** The app tells you when a new version is out.
 
 ## Installing
@@ -65,10 +65,10 @@ When a new version is published, a notice appears at the top of the app: *Versio
 ## Questions
 
 **Does it run in the background or drain my battery?**
-Only if you switch on friend alerts. Then it checks Combat Box about every 15 minutes in the background, with one small request each time. Otherwise it only refreshes while it's on screen. It only sends the notifications you switch on: a mission reminder or friend alerts.
+Only if you switch on friend alerts. Then Android runs a check about every 15 minutes in the background (less often while your phone is asleep), with one small request each time. Otherwise it only refreshes while it's on screen. It only sends the notifications you switch on: a mission reminder or friend alerts.
 
 **Do I need an account?**
-No. There's nothing to sign in to, and the only access the app needs is to the internet.
+No. There's nothing to sign in to. The app needs internet access, plus permission to show notifications (and to set alarms, for on-time reminders) if you switch on a reminder or friend alerts.
 
 **What does it send or collect?**
 Nothing about you. It reads Combat Box's public player and mission data and asks GitHub whether there's a newer version. Your starred friends and squads are stored only on your phone.

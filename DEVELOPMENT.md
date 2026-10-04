@@ -2,7 +2,7 @@
 
 How to build, test and release the app. Player-facing docs are in the [README](README.md).
 
-An Android companion app for [Combat Box](https://combatbox.net) (IL-2 Great Battles) players. It shows who's online right now, the player count and side balance, and your starred friends pinned at the top, so you can decide whether it's worth starting the sim. Player data comes from the public `il2statsapi.combatbox.net` API. The app refreshes every 60 seconds while it's on screen and never in the background.
+An Android companion app for [Combat Box](https://combatbox.net) (IL-2 Great Battles) players. It shows who's online right now, the player count and side balance, and your starred friends pinned at the top, so you can decide whether it's worth starting the sim. Player data comes from the public `il2statsapi.combatbox.net` API. The app refreshes every 60 seconds while it's on screen. In the background it only runs what the user switches on: the mission reminder (an alarm) and friend alerts (a WorkManager check about every 15 minutes).
 
 Requires Android 8.0 (API 26) or newer.
 

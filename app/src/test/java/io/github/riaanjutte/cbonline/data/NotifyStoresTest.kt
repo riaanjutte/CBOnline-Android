@@ -47,10 +47,15 @@ class NotifyStoresTest {
     fun `friend alerts start off, then keep their switch and last-online list`() = runTest {
         val store = FriendAlertsStore(dataStore)
         assertEquals(false, store.enabled.first())
-        assertEquals(emptySet<String>(), store.lastOnline.first())
+        assertNull(store.lastOnline.first())
         store.setEnabled(true)
         store.setLastOnline(setOf("hans", "=jg52=otto"))
         assertEquals(true, store.enabled.first())
         assertEquals(setOf("hans", "=jg52=otto"), store.lastOnline.first())
+        // An empty list (nobody online) is kept apart from no list at all
+        store.setLastOnline(emptySet())
+        assertEquals(emptySet<String>(), store.lastOnline.first())
+        store.setLastOnline(null)
+        assertNull(store.lastOnline.first())
     }
 }

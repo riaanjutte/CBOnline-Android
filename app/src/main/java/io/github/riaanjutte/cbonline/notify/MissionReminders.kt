@@ -17,6 +17,9 @@ data class MissionReminder(val missionName: String, val start: Instant) {
 /** The bell only offers a reminder while there's still time for it to come before the start. */
 fun canRemind(start: Instant, now: Instant): Boolean = start.minus(REMINDER_LEAD).isAfter(now)
 
+/** However late Android delivers the alarm, a reminder is never shown once its mission has started. */
+fun shouldShowReminder(start: Instant, now: Instant): Boolean = now.isBefore(start)
+
 sealed interface ReminderAction {
     data object Keep : ReminderAction
     data object Drop : ReminderAction
@@ -52,11 +55,14 @@ class MissionReminders(private val store: ReminderRepository, private val alarms
 
     val reminder: Flow<MissionReminder?> = store.reminder
 
-    /** Sets a reminder for [next], or cancels it if one is already set for that mission. */
+    /**
+     * Sets a reminder for [next], or cancels it if one is already set for that mission. A tap that lands in the
+     * last ten minutes (the bell hides on a 30-second tick) still sets one, which then comes straight away.
+     */
     suspend fun toggle(next: NextMission, now: Instant) {
         if (store.reminder.first()?.missionName == next.name) {
             cancel()
-        } else if (canRemind(next.expectedStart, now)) {
+        } else if (next.expectedStart.isAfter(now)) {
             val r = MissionReminder(next.name, next.expectedStart)
             store.set(r)
             alarms.schedule(r)

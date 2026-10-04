@@ -35,7 +35,11 @@ class FriendAlertsTest {
     // The background check, with everything it talks to faked
 
     private class FakePlayers(var players: List<OnlinePlayer>, var fail: Boolean = false) : PlayersSource {
-        override suspend fun fetch(): List<OnlinePlayer> = if (fail) throw IOException("offline") else players
+        var fetches = 0
+        override suspend fun fetch(): List<OnlinePlayer> {
+            fetches++
+            return if (fail) throw IOException("offline") else players
+        }
     }
 
     private class FakeFriends(names: Set<String>) : FriendsRepository {
@@ -49,21 +53,53 @@ class FriendAlertsTest {
         override suspend fun remove(tag: String) = Unit
     }
 
-    private class FakeAlertsStore(enabled: Boolean, last: Set<String>) : FriendAlertsRepository {
+    private class FakeAlertsStore(enabled: Boolean, last: Set<String>?) : FriendAlertsRepository {
         override val enabled = MutableStateFlow(enabled)
         override val lastOnline = MutableStateFlow(last)
         override suspend fun setEnabled(on: Boolean) { enabled.value = on }
-        override suspend fun setLastOnline(keys: Set<String>) { lastOnline.value = keys }
+        override suspend fun setLastOnline(keys: Set<String>?) { lastOnline.value = keys }
     }
 
     private fun p(n: String) = OnlinePlayer(n, Coalition.Allied, "00:10")
 
     private val notified = mutableListOf<List<String>>()
-    private fun check(players: FakePlayers, store: FakeAlertsStore, foreground: Boolean = false) = FriendAlertCheck(
-        players, FakeFriends(setOf("Hans")), FakeSquads(setOf("=JG52=")), store,
+    private fun check(
+        players: FakePlayers,
+        store: FakeAlertsStore,
+        foreground: Boolean = false,
+        canNotify: Boolean = true,
+        friends: Set<String> = setOf("Hans"),
+        squads: Set<String> = setOf("=JG52=")
+    ) = FriendAlertCheck(
+        players, FakeFriends(friends), FakeSquads(squads), store,
         notify = { rows -> notified += rows.map { it.nickname } },
-        inForeground = { foreground }
+        inForeground = { foreground },
+        canNotify = { canNotify }
     )
+
+    @Test
+    fun `with no list yet, the first check only records who's online`() = runTest {
+        val store = FakeAlertsStore(enabled = true, last = null)
+        check(FakePlayers(listOf(p("Hans"))), store).run()
+        assertTrue(notified.isEmpty())
+        assertEquals(setOf("hans"), store.lastOnline.value)
+    }
+
+    @Test
+    fun `with notifications blocked there's no check at all`() = runTest {
+        val players = FakePlayers(listOf(p("Hans")))
+        val store = FakeAlertsStore(enabled = true, last = emptySet())
+        check(players, store, canNotify = false).run()
+        assertEquals(0, players.fetches)
+        assertEquals(emptySet<String>(), store.lastOnline.value)
+    }
+
+    @Test
+    fun `with nothing starred there's no request`() = runTest {
+        val players = FakePlayers(listOf(p("Hans")))
+        check(players, FakeAlertsStore(enabled = true, last = emptySet()), friends = emptySet(), squads = emptySet()).run()
+        assertEquals(0, players.fetches)
+    }
 
     @Test
     fun `alerts for friends and squad members who came online since the last check`() = runTest {

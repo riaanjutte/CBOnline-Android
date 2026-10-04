@@ -3,7 +3,11 @@ package io.github.riaanjutte.cbonline
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import android.util.Log
 import io.github.riaanjutte.cbonline.notify.Notifications
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class CbOnlineApp : Application() {
 
@@ -20,6 +24,14 @@ class CbOnlineApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         Notifications.createChannels(this)
+        // Friend alerts that are switched on but have no scheduled checks (e.g. a restored backup) start again
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                container.friendAlertSwitch.ensureRunning()
+            } catch (e: Exception) {
+                Log.w("CBOnline", "Restarting friend alerts failed", e)
+            }
+        }
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: Activity) {
                 startedActivities++

@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.util.Log
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -13,6 +15,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import io.github.riaanjutte.cbonline.CbOnlineApp
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -25,18 +28,34 @@ private const val EXTRA_NAME = "mission"
 private const val EXTRA_START = "start"
 
 /**
- * The reminder alarm. Inexact on purpose: exact alarms need a permission Android reserves for alarm-clock apps,
- * so in deep sleep the reminder can come a few minutes late.
+ * The reminder alarm. Exact where Android allows it (always before Android 12; from 12 on, once the user has
+ * switched on "Alarms & reminders" for the app), so it comes on time even when the phone is asleep. Otherwise
+ * it falls back to an inexact alarm, which Android may deliver well after the time; the receiver then drops
+ * a reminder whose mission has already started.
  */
 class AlarmReminderAlarms(private val context: Context) : ReminderAlarms {
 
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
     override fun schedule(r: MissionReminder) {
-        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, r.remindAt.toEpochMilli(), intent(r))
+        val at = r.remindAt.toEpochMilli()
+        if (canScheduleExact(alarmManager)) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, intent(r))
+        } else {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, intent(r))
+        }
     }
 
     override fun cancel() = alarmManager.cancel(intent(null))
+
+    companion object {
+        /** True when exact alarms need the user to switch on "Alarms & reminders" first (Android 12+). */
+        fun needsExactAlarmAccess(context: Context): Boolean =
+            !canScheduleExact(context.getSystemService(AlarmManager::class.java))
+
+        private fun canScheduleExact(alarmManager: AlarmManager): Boolean =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+    }
 
     /** Extras don't take part in matching, so one request code and action always mean "the" reminder. */
     private fun intent(r: MissionReminder?): PendingIntent = PendingIntent.getBroadcast(
@@ -54,7 +73,8 @@ class ReminderReceiver : BroadcastReceiver() {
         if (intent.action != ACTION_REMIND) return
         val name = intent.getStringExtra(EXTRA_NAME) ?: return
         val start = Instant.ofEpochMilli(intent.getLongExtra(EXTRA_START, 0))
-        Notifications.showMissionReminder(context, name, start)
+        // An inexact alarm can come very late; a reminder after the start would only mislead
+        if (shouldShowReminder(start, Instant.now())) Notifications.showMissionReminder(context, name, start)
         val store = (context.applicationContext as CbOnlineApp).container.reminderStore
         inBackground {
             // Clear only this reminder: a newer one may have replaced it meanwhile
@@ -64,12 +84,13 @@ class ReminderReceiver : BroadcastReceiver() {
 }
 
 /**
- * Re-arms the pending reminder after the phone restarts or the app is updated, both of which drop alarms.
+ * Re-arms the pending reminder when the phone restarts (which drops alarms), after an app update (harmless if
+ * the alarm survived) and when the user switches on "Alarms & reminders" (so it becomes an exact alarm).
  * Exported for those system broadcasts, which other apps can't send.
  */
 class RestartReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != Intent.ACTION_BOOT_COMPLETED && intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
+        if (intent.action !in RESTART_ACTIONS) return
         val container = (context.applicationContext as CbOnlineApp).container
         inBackground {
             val saved = container.reminderStore.reminder.first() ?: return@inBackground
@@ -79,12 +100,25 @@ class RestartReceiver : BroadcastReceiver() {
     }
 }
 
-/** Runs [work] off the main thread while keeping the receiver alive until it's done. */
+private val RESTART_ACTIONS = setOf(
+    Intent.ACTION_BOOT_COMPLETED,
+    Intent.ACTION_MY_PACKAGE_REPLACED,
+    AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED
+)
+
+/**
+ * Runs [work] off the main thread while keeping the receiver alive until it's done. A failed settings write
+ * (disk full, corrupt file) is logged, not allowed to crash the app, as in the view model.
+ */
 private fun BroadcastReceiver.inBackground(work: suspend () -> Unit) {
     val pending = goAsync()
     CoroutineScope(Dispatchers.IO).launch {
         try {
             work()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("CBOnline", "Reminder bookkeeping failed", e)
         } finally {
             pending.finish()
         }

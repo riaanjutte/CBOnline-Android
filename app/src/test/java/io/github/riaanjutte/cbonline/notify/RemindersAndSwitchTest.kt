@@ -41,8 +41,14 @@ class RemindersAndSwitchTest {
     }
 
     @Test
-    fun `no reminder when the mission starts within ten minutes`() = runTest {
+    fun `a tap in the last ten minutes still sets a reminder, which then comes straight away`() = runTest {
         reminders.toggle(next("Paravane", 5), now)
+        assertEquals(MissionReminder("Paravane", at(5)), store.reminder.value)
+    }
+
+    @Test
+    fun `no reminder once the mission has started`() = runTest {
+        reminders.toggle(next("Paravane", -1), now)
         assertNull(store.reminder.value)
         assertEquals(emptyList<String>(), alarms.log)
     }
@@ -74,9 +80,9 @@ class RemindersAndSwitchTest {
 
     private class FakeAlertsStore : FriendAlertsRepository {
         override val enabled = MutableStateFlow(false)
-        override val lastOnline = MutableStateFlow(setOf("stale"))
+        override val lastOnline = MutableStateFlow<Set<String>?>(setOf("stale"))
         override suspend fun setEnabled(on: Boolean) { enabled.value = on }
-        override suspend fun setLastOnline(keys: Set<String>) { lastOnline.value = keys }
+        override suspend fun setLastOnline(keys: Set<String>?) { lastOnline.value = keys }
     }
 
     private class FakeScheduler : AlertScheduler {
@@ -95,7 +101,25 @@ class RemindersAndSwitchTest {
         assertEquals(setOf("hans"), alerts.lastOnline.value)
         switch.set(false, onlineNow = setOf("hans"))
         assertEquals(false, alerts.enabled.value)
-        assertEquals(emptySet<String>(), alerts.lastOnline.value)
+        assertNull(alerts.lastOnline.value)
         assertEquals(listOf("start", "stop"), scheduler.log)
+    }
+
+    @Test
+    fun `switching on before the roster has loaded leaves no list, so the first check only records it`() = runTest {
+        val alerts = FakeAlertsStore()
+        FriendAlertSwitch(alerts, FakeScheduler()).set(true, onlineNow = null)
+        assertNull(alerts.lastOnline.value)
+    }
+
+    @Test
+    fun `on app start the checks are restarted if alerts are on, and left alone if off`() = runTest {
+        val alerts = FakeAlertsStore()
+        val scheduler = FakeScheduler()
+        val switch = FriendAlertSwitch(alerts, scheduler)
+        switch.ensureRunning()
+        alerts.enabled.value = true
+        switch.ensureRunning()
+        assertEquals(listOf("start"), scheduler.log)
     }
 }

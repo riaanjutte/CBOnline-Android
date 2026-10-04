@@ -83,6 +83,7 @@
     <string name="reminder_cancel_cd">Cancel the reminder for %1$s</string>
     <string name="friend_alerts">Friend alerts</string>
     <string name="notifications_off">Notifications are off for CB Online. You can allow them in Android settings.</string>
+    <string name="exact_alarms_prompt">Switch on \"Alarms &amp; reminders\" for CB Online so mission reminders come on time.</string>
     <string name="channel_reminders">Mission reminders</string>
     <string name="channel_reminders_text">A reminder before a mission you\'ve set the bell for.</string>
     <string name="channel_friends">Friend alerts</string>

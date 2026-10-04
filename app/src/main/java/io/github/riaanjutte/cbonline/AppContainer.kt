@@ -58,7 +58,8 @@ class AppContainer(context: Context) {
     fun friendAlertCheck(inForeground: () -> Boolean) = FriendAlertCheck(
         playersApi, friendsStore, squadsStore, friendAlertsStore,
         notify = { Notifications.showFriendsOnline(appContext, it) },
-        inForeground = inForeground
+        inForeground = inForeground,
+        canNotify = { Notifications.canNotifyFriends(appContext) }
     )
     val updateChecker = UpdateChecker(client, json, dataStore, userAgent)
 }

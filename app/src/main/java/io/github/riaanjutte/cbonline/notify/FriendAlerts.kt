@@ -26,9 +26,10 @@ fun summarise(names: List<String>): AlertSummary =
 
 interface FriendAlertsRepository {
     val enabled: Flow<Boolean>
-    val lastOnline: Flow<Set<String>>
+    /** Who was online at the last check (lower-case names); null when there's no list yet. */
+    val lastOnline: Flow<Set<String>?>
     suspend fun setEnabled(on: Boolean)
-    suspend fun setLastOnline(keys: Set<String>)
+    suspend fun setLastOnline(keys: Set<String>?)
 }
 
 /** Android's periodic background check. */
@@ -44,12 +45,18 @@ class FriendAlertSwitch(private val store: FriendAlertsRepository, private val s
 
     /**
      * Switching on remembers who's online right now ([onlineNow], lower-case names), so friends you can already
-     * see don't trigger an alert; switching off stops the checks and forgets the list.
+     * see don't trigger an alert. Null (no roster loaded yet) leaves no list, so the first check only records
+     * one. Switching off stops the checks and forgets the list.
      */
-    suspend fun set(on: Boolean, onlineNow: Set<String>) {
-        store.setLastOnline(if (on) onlineNow else emptySet())
+    suspend fun set(on: Boolean, onlineNow: Set<String>?) {
+        store.setLastOnline(if (on) onlineNow else null)
         store.setEnabled(on)
         if (on) scheduler.start() else scheduler.stop()
+    }
+
+    /** On app start: the switch is saved with the app's settings, the scheduled checks aren't (e.g. restored backups). */
+    suspend fun ensureRunning() {
+        if (store.enabled.first()) scheduler.start()
     }
 }
 
@@ -60,20 +67,27 @@ class FriendAlertCheck(
     private val squads: SquadsRepository,
     private val store: FriendAlertsRepository,
     private val notify: (List<RosterRow>) -> Unit,
-    private val inForeground: () -> Boolean
+    private val inForeground: () -> Boolean,
+    /** False when notifications or the friend alerts channel are blocked: then a check would be wasted. */
+    private val canNotify: () -> Boolean
 ) {
     suspend fun run() {
-        if (!store.enabled.first()) return
+        if (!store.enabled.first() || !canNotify()) return
+        val friendNames = friends.friends.first()
+        val squadTags = squads.squads.first()
+        if (friendNames.isEmpty() && squadTags.isEmpty()) return // nobody to look for, so no request
         val online = try {
-            RosterBuilder.build(players.fetch(), friends.friends.first(), squads.squads.first()).friendsOnline
+            RosterBuilder.build(players.fetch(), friendNames, squadTags).friendsOnline
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Log.w("CBOnline", "Friend alert check failed", e)
             return // try again at the next check, with the old list
         }
-        val newly = newlyOnline(store.lastOnline.first(), online)
+        val previous = store.lastOnline.first()
         store.setLastOnline(online.map { friendKey(it.nickname) }.toSet())
+        if (previous == null) return // first check after switching on: just record who's there
+        val newly = newlyOnline(previous, online)
         // With the app open you can see the list, so the check only keeps its memory up to date
         if (newly.isNotEmpty() && !inForeground()) notify(newly)
     }

@@ -46,6 +46,12 @@ object Notifications {
         return permitted && NotificationManagerCompat.from(context).areNotificationsEnabled()
     }
 
+    /** Also false when just the "Friend alerts" channel is blocked in Android settings. */
+    fun canNotifyFriends(context: Context): Boolean =
+        canNotify(context) &&
+            context.getSystemService(NotificationManager::class.java)
+                .getNotificationChannel(CHANNEL_FRIENDS)?.importance != NotificationManager.IMPORTANCE_NONE
+
     fun showMissionReminder(context: Context, missionName: String, start: Instant) {
         val time = DateFormat.getTimeFormat(context).format(Date.from(start))
         show(context, ID_REMINDER, CHANNEL_REMINDERS, context.getString(R.string.notif_reminder_title),
@@ -61,16 +67,16 @@ object Notifications {
             names.size == 2 -> context.getString(R.string.notif_friends_two, names[0], names[1])
             else -> context.getString(R.string.notif_friends_three, names[0], names[1], names[2])
         }
-        show(context, ID_FRIENDS, CHANNEL_FRIENDS, context.getString(R.string.notif_friends_title), text)
+        // Gone after half an hour: "Hans is online" shouldn't linger once he may have left
+        show(context, ID_FRIENDS, CHANNEL_FRIENDS, context.getString(R.string.notif_friends_title), text, timeoutMs = 30 * 60 * 1000L)
     }
 
-    private fun show(context: Context, id: Int, channel: String, title: String, text: String) {
+    private fun show(context: Context, id: Int, channel: String, title: String, text: String, timeoutMs: Long? = null) {
         if (!canNotify(context)) return
-        val open = PendingIntent.getActivity(
-            context, id,
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        // The launcher's own intent: brings an open app back as it was instead of restarting its screen
+        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            ?: Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val open = PendingIntent.getActivity(context, id, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val notification = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
@@ -78,6 +84,7 @@ object Notifications {
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setContentIntent(open)
             .setAutoCancel(true)
+            .apply { timeoutMs?.let { setTimeoutAfter(it) } }
             .build()
         try {
             NotificationManagerCompat.from(context).notify(id, notification)

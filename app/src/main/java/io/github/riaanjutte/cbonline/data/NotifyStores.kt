@@ -53,14 +53,15 @@ class FriendAlertsStore(private val dataStore: DataStore<Preferences>) : FriendA
     private val data = dataStore.data.catchIo()
 
     override val enabled: Flow<Boolean> = data.map { it[ENABLED] ?: false }
-    override val lastOnline: Flow<Set<String>> = data.map { it[LAST_ONLINE] ?: emptySet() }
+    /** Absent means no list yet; an empty set means nobody was online. */
+    override val lastOnline: Flow<Set<String>?> = data.map { it[LAST_ONLINE] }
 
     override suspend fun setEnabled(on: Boolean) {
         dataStore.edit { it[ENABLED] = on }
     }
 
-    override suspend fun setLastOnline(keys: Set<String>) {
-        dataStore.edit { it[LAST_ONLINE] = keys }
+    override suspend fun setLastOnline(keys: Set<String>?) {
+        dataStore.edit { if (keys == null) it.remove(LAST_ONLINE) else it[LAST_ONLINE] = keys }
     }
 
     private companion object {
