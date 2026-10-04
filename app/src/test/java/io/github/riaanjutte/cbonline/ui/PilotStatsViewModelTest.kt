@@ -6,8 +6,10 @@ import io.github.riaanjutte.cbonline.data.StatsResult
 import io.github.riaanjutte.cbonline.data.StatsSource
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -23,9 +25,11 @@ class PilotStatsViewModelTest {
         val calls = mutableListOf<String>()
         val gates = mutableMapOf<String, CompletableDeferred<Unit>>()
         var answer: (String) -> StatsResult = { StatsResult.Found(stats(it)) }
+        /** The answer had already arrived when the panel closed: the fetch finishes even though it was cancelled. */
+        var finishesDespiteCancel = false
         override suspend fun fetch(nickname: String): StatsResult {
             calls += nickname
-            gates[nickname]?.await()
+            if (finishesDespiteCancel) withContext(NonCancellable) { gates[nickname]?.await() } else gates[nickname]?.await()
             return answer(nickname)
         }
     }
@@ -116,6 +120,39 @@ class PilotStatsViewModelTest {
 
     @Test
     fun `closing hides the panel and a late answer doesn't reopen it`() = runTest {
+        source.gates["Hans"] = CompletableDeferred()
+        vm.open("Hans"); runCurrent()
+        vm.close()
+        source.gates.getValue("Hans").complete(Unit); runCurrent()
+        assertEquals(StatsUiState.Hidden, vm.state.value)
+    }
+
+    @Test
+    fun `a failure that arrives as the panel closes doesn't reopen it`() = runTest {
+        source.finishesDespiteCancel = true
+        source.answer = { throw IOException("connection reset") }
+        source.gates["Hans"] = CompletableDeferred()
+        vm.open("Hans"); runCurrent()
+        vm.close()
+        source.gates.getValue("Hans").complete(Unit); runCurrent()
+        assertEquals(StatsUiState.Hidden, vm.state.value)
+    }
+
+    @Test
+    fun `a failure that arrives as another pilot opens doesn't replace them`() = runTest {
+        vm.open("Fast"); runCurrent() // cached from here on
+        source.finishesDespiteCancel = true
+        source.answer = { throw IOException("connection reset") }
+        source.gates["Slow"] = CompletableDeferred()
+        vm.open("Slow"); runCurrent()
+        vm.open("Fast"); runCurrent()
+        source.gates.getValue("Slow").complete(Unit); runCurrent()
+        assertEquals(StatsUiState.Loaded("Fast", stats("Fast")), vm.state.value)
+    }
+
+    @Test
+    fun `an answer that arrives as the panel closes doesn't reopen it`() = runTest {
+        source.finishesDespiteCancel = true
         source.gates["Hans"] = CompletableDeferred()
         vm.open("Hans"); runCurrent()
         vm.close()

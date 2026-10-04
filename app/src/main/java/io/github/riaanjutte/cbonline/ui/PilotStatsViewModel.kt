@@ -9,6 +9,7 @@ import io.github.riaanjutte.cbonline.data.StatsResult
 import io.github.riaanjutte.cbonline.data.StatsSource
 import io.github.riaanjutte.cbonline.data.nameKey
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,7 +53,7 @@ class PilotStatsViewModel(
         }
         _state.value = StatsUiState.Loading(nickname)
         job = viewModelScope.launch {
-            _state.value = try {
+            val shown = try {
                 source.fetch(nickname)
                     .also { if (it !is StatsResult.Found || it.complete) cache[key] = Cached(it, now()) }
                     .toUiState(nickname)
@@ -62,6 +63,9 @@ class PilotStatsViewModel(
                 Log.w("CBOnline", "Stats fetch failed", e)
                 StatsUiState.Failed(nickname)
             }
+            // An answer (or failure) can arrive just as the panel is closed or another pilot opened; it's dropped then
+            ensureActive()
+            _state.value = shown
         }
     }
 
