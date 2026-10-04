@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
                                 container.playersApi,
                                 container.missionApi,
                                 container.friendsStore,
+                                container.squadsStore,
                                 container.updateChecker,
                                 BuildConfig.VERSION_NAME
                             )

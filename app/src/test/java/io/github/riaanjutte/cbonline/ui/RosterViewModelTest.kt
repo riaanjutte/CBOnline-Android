@@ -7,6 +7,7 @@ import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.data.MissionSource
 import io.github.riaanjutte.cbonline.data.OnlinePlayer
 import io.github.riaanjutte.cbonline.data.PlayersSource
+import io.github.riaanjutte.cbonline.data.SquadsRepository
 import io.github.riaanjutte.cbonline.data.UpdateInfo
 import io.github.riaanjutte.cbonline.data.UpdateSource
 import kotlinx.coroutines.CompletableDeferred
@@ -78,11 +79,52 @@ class RosterViewModelTest {
         }
     }
 
+    private class FakeSquads : SquadsRepository {
+        override val squads = MutableStateFlow(emptySet<String>())
+        var failWrites = false
+        override suspend fun toggle(tag: String) {
+            if (failWrites) throw IOException("disk full")
+            squads.value = if (tag in squads.value) squads.value - tag else squads.value + tag
+        }
+    }
+
     private val players = FakePlayers()
     private val missions = FakeMissions()
     private val friends = FakeFriends()
+    private val squads = FakeSquads()
 
-    private fun vm(updates: UpdateSource = FakeUpdates()) = RosterViewModel(players, missions, friends, updates, "1.0.0")
+    private fun vm(updates: UpdateSource = FakeUpdates()) = RosterViewModel(players, missions, friends, squads, updates, "1.0.0")
+
+    @Test
+    fun `starring a squad lists its members under friends without fetching`() = runTest {
+        players.next = { listOf(OnlinePlayer("=JG52=Hans", Coalition.Axis, "00:10"), OnlinePlayer("Bob", Coalition.Allied, "00:10")) }
+        val vm = vm()
+        subscribe(vm)
+        vm.toggleSquad("=JG52=")
+        runCurrent()
+        val roster = vm.state.value.roster!!
+        assertEquals(listOf("=JG52=Hans"), roster.friendsOnline.map { it.nickname })
+        assertEquals(setOf("=JG52="), vm.state.value.squads)
+        assertEquals(1, players.calls)
+    }
+
+    @Test
+    fun `a starred squad with nobody online is listed`() = runTest {
+        squads.squads.value = setOf("[CB]")
+        val vm = vm()
+        subscribe(vm)
+        assertEquals(listOf("[CB]"), vm.state.value.roster!!.squadsOffline)
+    }
+
+    @Test
+    fun `failed squad write does not crash`() = runTest {
+        squads.failWrites = true
+        val vm = vm()
+        subscribe(vm)
+        vm.toggleSquad("[CB]")
+        runCurrent()
+        assertEquals(emptySet<String>(), vm.state.value.squads)
+    }
 
     private fun TestScope.subscribe(vm: RosterViewModel) =
         backgroundScope.launch { vm.state.collect {} }.also { runCurrent() }

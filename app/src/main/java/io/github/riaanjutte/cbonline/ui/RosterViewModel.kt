@@ -8,6 +8,7 @@ import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.data.MissionSource
 import io.github.riaanjutte.cbonline.data.OnlinePlayer
 import io.github.riaanjutte.cbonline.data.PlayersSource
+import io.github.riaanjutte.cbonline.data.SquadsRepository
 import io.github.riaanjutte.cbonline.data.UpdateInfo
 import io.github.riaanjutte.cbonline.data.UpdateSource
 import io.github.riaanjutte.cbonline.roster.Roster
@@ -38,13 +39,16 @@ data class RosterUiState(
     val errorMessage: String? = null,
     val update: UpdateInfo? = null,
     /** Last good mission info; independent of the roster's error state. */
-    val mission: MissionInfo? = null
+    val mission: MissionInfo? = null,
+    /** Starred squad tags, for the stats panel's Star / Unstar squad button. */
+    val squads: Set<String> = emptySet()
 )
 
 class RosterViewModel(
     private val players: PlayersSource,
     private val missions: MissionSource,
     private val friends: FriendsRepository,
+    private val squads: SquadsRepository,
     private val updates: UpdateSource,
     private val currentVersion: String
 ) : ViewModel() {
@@ -75,7 +79,7 @@ class RosterViewModel(
                 manual = withTimeoutOrNull(REFRESH_INTERVAL_MS) { manualRefresh.receive() } != null
             }
         }
-        combine(fetchState, friends.friends, updateState, missionState, ::toUiState).collect { send(it) }
+        combine(fetchState, friends.friends, squads.squads, updateState, missionState, ::toUiState).collect { send(it) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RosterUiState())
 
     fun refresh() {
@@ -84,6 +88,10 @@ class RosterViewModel(
 
     fun toggleFriend(nickname: String) {
         viewModelScope.launch { persist("Saving friend failed") { friends.toggle(nickname) } }
+    }
+
+    fun toggleSquad(tag: String) {
+        viewModelScope.launch { persist("Saving squad failed") { squads.toggle(tag) } }
     }
 
     fun dismissUpdate() {
@@ -148,8 +156,15 @@ class RosterViewModel(
         }
     }
 
-    private fun toUiState(fetch: FetchState, friendNames: Set<String>, update: UpdateInfo?, mission: MissionInfo?) = RosterUiState(
-        roster = fetch.players?.let { RosterBuilder.build(it, friendNames) },
+    private fun toUiState(
+        fetch: FetchState,
+        friendNames: Set<String>,
+        squadTags: Set<String>,
+        update: UpdateInfo?,
+        mission: MissionInfo?
+    ) = RosterUiState(
+        roster = fetch.players?.let { RosterBuilder.build(it, friendNames, squadTags) },
+        squads = squadTags,
         lastUpdated = fetch.lastUpdated,
         isLoading = fetch.isLoading,
         isRefreshing = fetch.isRefreshing,
