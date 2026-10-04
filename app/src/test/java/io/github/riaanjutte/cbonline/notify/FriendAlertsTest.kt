@@ -6,11 +6,13 @@ import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.data.OnlinePlayer
 import io.github.riaanjutte.cbonline.data.PlayersSource
 import io.github.riaanjutte.cbonline.data.SquadsRepository
+import io.github.riaanjutte.cbonline.roster.RosterBuilder
 import io.github.riaanjutte.cbonline.roster.RosterRow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
@@ -43,6 +45,18 @@ class FriendAlertsTest {
         assertTrue(nearMissionChange(mission, start.plus(Duration.ofHours(3)).plusSeconds(60)))
         assertFalse(nearMissionChange(mission.copy(startedAt = null), start))
         assertFalse(nearMissionChange(null, start))
+    }
+
+    @Test
+    fun `switching on remembers the friends in the roster as it was fetched`() {
+        val start = Instant.parse("2026-10-04T09:44:19Z")
+        val mission = MissionInfo("M", null, start.plus(Duration.ofHours(3)), null, null, startedAt = start)
+        val empty = RosterBuilder.build(emptyList(), setOf("Hans"))
+        val busy = RosterBuilder.build(listOf(p("Hans"), p("Bob")), setOf("Hans"))
+        assertNull("no roster yet", onlineAtSwitchOn(null, mission, start))
+        assertEquals("busy, even at a change", setOf("hans"), onlineAtSwitchOn(busy, mission, start.plusSeconds(30)))
+        assertNull("emptied by the change", onlineAtSwitchOn(empty, mission, start.plusSeconds(30)))
+        assertEquals("quiet server", emptySet<String>(), onlineAtSwitchOn(empty, mission, start.plus(Duration.ofHours(1))))
     }
 
     @Test

@@ -6,6 +6,7 @@ import io.github.riaanjutte.cbonline.data.MissionInfo
 import io.github.riaanjutte.cbonline.data.PlayersSource
 import io.github.riaanjutte.cbonline.data.SquadsRepository
 import io.github.riaanjutte.cbonline.data.nameKey
+import io.github.riaanjutte.cbonline.roster.Roster
 import io.github.riaanjutte.cbonline.roster.RosterBuilder
 import io.github.riaanjutte.cbonline.roster.RosterRow
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +27,17 @@ fun nearMissionChange(mission: MissionInfo?, now: Instant): Boolean =
     mission != null && listOfNotNull(mission.startedAt, mission.estimatedEnd).any { change ->
         !now.isBefore(change.minus(CHANGE_LEAD)) && !now.isAfter(change.plus(CHANGE_TAIL))
     }
+
+/**
+ * Who counts as already online when friend alerts are switched on: the friends in [roster] (lower-case names). Null
+ * leaves the first background check to record who's on: when no roster has loaded, or when the roster is the empty
+ * list the server shows at a mission change (judged by when it was fetched, [fetchedAt], since the screen can keep
+ * showing it for a while). A quiet server's empty list is kept, so the first friend to come on alerts.
+ */
+fun onlineAtSwitchOn(roster: Roster?, mission: MissionInfo?, fetchedAt: Instant): Set<String>? {
+    if (roster == null || (roster.total == 0 && nearMissionChange(mission, fetchedAt))) return null
+    return roster.friendsOnline.map { nameKey(it.nickname) }.toSet()
+}
 
 private val CHANGE_LEAD = Duration.ofMinutes(2)
 private val CHANGE_TAIL = Duration.ofMinutes(5)
@@ -56,9 +68,9 @@ class FriendAlertSwitch(private val store: FriendAlertsRepository, private val s
     val enabled: Flow<Boolean> = store.enabled
 
     /**
-     * Switching on remembers who's online right now ([onlineNow], lower-case names), so friends you can already
-     * see don't trigger an alert. Null (no roster loaded yet) leaves no list, so the first check only records
-     * one. Switching off stops the checks and forgets the list.
+     * Switching on remembers who's online right now ([onlineNow], lower-case names; see [onlineAtSwitchOn]), so
+     * friends you can already see don't trigger an alert. Null (not known yet) leaves no list, so the first check
+     * only records one. Switching off stops the checks and forgets the list.
      */
     suspend fun set(on: Boolean, onlineNow: Set<String>?) {
         store.setLastOnline(if (on) onlineNow else null)

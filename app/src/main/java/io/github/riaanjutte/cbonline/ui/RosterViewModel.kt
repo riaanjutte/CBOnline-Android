@@ -12,10 +12,9 @@ import io.github.riaanjutte.cbonline.data.SquadsRepository
 import io.github.riaanjutte.cbonline.notify.FriendAlertSwitch
 import io.github.riaanjutte.cbonline.notify.MissionReminder
 import io.github.riaanjutte.cbonline.notify.MissionReminders
-import io.github.riaanjutte.cbonline.notify.nearMissionChange
+import io.github.riaanjutte.cbonline.notify.onlineAtSwitchOn
 import io.github.riaanjutte.cbonline.data.UpdateInfo
 import io.github.riaanjutte.cbonline.data.UpdateSource
-import io.github.riaanjutte.cbonline.data.nameKey
 import io.github.riaanjutte.cbonline.roster.Roster
 import io.github.riaanjutte.cbonline.roster.RosterBuilder
 import kotlinx.coroutines.channels.Channel
@@ -139,10 +138,7 @@ class RosterViewModel(
     /** Friends already online when alerts are switched on don't alert; [state]'s roster says who they are. */
     fun setFriendAlerts(on: Boolean) {
         val ui = state.value
-        // Null leaves the first background check to record who's online: when no roster has loaded, or when it's the
-        // empty list the server shows at a mission change (a quiet server's empty list is kept, so the first friend on alerts)
-        val roster = ui.roster?.takeUnless { it.total == 0 && nearMissionChange(ui.mission, Instant.now()) }
-        val onlineNow = roster?.friendsOnline?.map { nameKey(it.nickname) }?.toSet()
+        val onlineNow = onlineAtSwitchOn(ui.roster, ui.mission, fetchedAt = ui.lastUpdated ?: Instant.now())
         viewModelScope.launch { persist("Saving friend alerts failed") { friendAlerts.set(on, onlineNow) } }
     }
 
