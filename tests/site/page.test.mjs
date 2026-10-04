@@ -87,6 +87,44 @@ test("faq and verification are collapsible", () => {
   assert.equal(text(details[0].match(/<summary\b[^>]*>([\s\S]*?)<\/summary>/)?.[1] ?? ""), "If Android says the developer is unverified");
 });
 
+const meta = (key) =>
+  html.match(new RegExp(`<meta\\s+(?:property|name)="${key.replace(/[:.]/g, "\\$&")}"\\s+content="([^"]*)"`))?.[1];
+
+// Width and height from a JPEG's start-of-frame marker
+const jpegSize = (buf) => {
+  let i = 2;
+  while (i < buf.length) {
+    if (buf[i] !== 0xff) throw new Error(`bad marker at ${i}`);
+    const marker = buf[i + 1];
+    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+      return { height: buf.readUInt16BE(i + 5), width: buf.readUInt16BE(i + 7) };
+    }
+    i += 2 + buf.readUInt16BE(i + 2);
+  }
+  throw new Error("no SOF marker");
+};
+
+test("link preview tags", () => {
+  const base = "https://riaanjutte.github.io/CBOnline-Android/";
+  assert.equal(meta("og:type"), "website");
+  assert.equal(meta("og:title"), "CB Online: who's flying on Combat Box");
+  assert.ok((meta("og:description") ?? "").length >= 20, "og:description");
+  assert.equal(meta("og:url"), base);
+  assert.equal(meta("og:image"), base + "assets/social-card.jpg");
+  assert.equal(meta("og:image:width"), "1200");
+  assert.equal(meta("og:image:height"), "630");
+  assert.ok((meta("og:image:alt") ?? "").length > 0, "og:image:alt");
+  assert.equal(meta("twitter:card"), "summary_large_image");
+});
+
+test("social card is 1200x630 and under 300 KB", () => {
+  const file = new URL("assets/social-card.jpg", siteDir);
+  assert.ok(existsSync(fileURLToPath(file)), "no social-card.jpg");
+  const buf = readFileSync(file);
+  assert.deepEqual(jpegSize(buf), { width: 1200, height: 630 });
+  assert.ok(buf.length < 300_000, `${buf.length} bytes`);
+});
+
 test("head basics", () => {
   assert.match(html, /<html\b[^>]*\blang="en"/);
   assert.equal(text(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ""), "CB Online: who's flying on Combat Box");
