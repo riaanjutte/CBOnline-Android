@@ -39,6 +39,13 @@ class AircraftNamesTest {
     }
 
     @Test
+    fun `dotted prefixes keep their capitals and series numerals go upper`() {
+        check("mc.202 ser.viii", "MC.202 Ser.VIII")
+        check("yak-1 ser.69", "Yak-1 Ser.69")
+        check("il-2 mod.1942", "Il-2 Mod.1942")
+    }
+
+    @Test
     fun `tokens starting with a digit are left alone`() = check("ju 52 3mg4e", "Ju 52 3mg4e")
 
     @Test
