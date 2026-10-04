@@ -1,5 +1,6 @@
 package io.github.riaanjutte.cbonline.ui
 
+import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -30,7 +31,8 @@ sealed interface StatsUiState {
  */
 class PilotStatsViewModel(
     private val source: StatsSource,
-    private val now: () -> Long = System::currentTimeMillis
+    /** Time since boot, so changing the phone's clock doesn't stretch or cut the cache. */
+    private val now: () -> Long = SystemClock::elapsedRealtime
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<StatsUiState>(StatsUiState.Hidden)

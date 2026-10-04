@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit
 class PilotStatsApiTest {
 
     private val server = MockWebServer()
+    private val client = OkHttpClient()
     private lateinit var api: PilotStatsApi
     private val requests = CopyOnWriteArrayList<RecordedRequest>()
 
@@ -46,7 +47,7 @@ class PilotStatsApiTest {
         }
         server.start()
         api = PilotStatsApi(
-            OkHttpClient(),
+            client,
             Json { ignoreUnknownKeys = true; coerceInputValues = true },
             server.url("/").toString().trimEnd('/'),
             "CBOnline-Android/test"
@@ -150,6 +151,10 @@ class PilotStatsApiTest {
         fetch.cancelAndJoin()
         val millis = (System.nanoTime() - started) / 1_000_000
         assertTrue("cancelling took $millis ms", millis < 1_500)
+        // ...and the request itself stops, rather than reading the slow body to the end in the background
+        val deadline = System.nanoTime() + 1_000_000_000L
+        while (client.dispatcher.runningCallsCount() > 0 && System.nanoTime() < deadline) Thread.sleep(20)
+        assertEquals("requests still running", 0, client.dispatcher.runningCallsCount())
     }
 
     @Test
