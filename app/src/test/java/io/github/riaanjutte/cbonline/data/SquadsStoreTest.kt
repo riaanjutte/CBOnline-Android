@@ -30,19 +30,27 @@ class SquadsStoreTest {
     fun tearDown() = scope.cancel()
 
     @Test
-    fun `toggle adds a trimmed tag then removes it ignoring case`() = runTest {
+    fun `add stores a trimmed tag and remove takes it out ignoring case`() = runTest {
         val store = SquadsStore(dataStore)
-        store.toggle(" =JG52= ")
+        store.add(" =JG52= ")
         assertEquals(setOf("=JG52="), store.squads.first())
-        store.toggle("=jg52=")
+        store.remove("=jg52=")
         assertEquals(emptySet<String>(), store.squads.first())
+    }
+
+    @Test
+    fun `adding a tag that's already starred keeps it`() = runTest {
+        val store = SquadsStore(dataStore)
+        store.add("=JG52=")
+        store.add("=jg52=")
+        assertEquals(setOf("=JG52="), store.squads.first())
     }
 
     @Test
     fun `tags shorter than two characters are ignored`() = runTest {
         val store = SquadsStore(dataStore)
-        store.toggle("x")
-        store.toggle("   ")
+        store.add("x")
+        store.add("   ")
         assertEquals(emptySet<String>(), store.squads.first())
     }
 
@@ -50,7 +58,7 @@ class SquadsStoreTest {
     fun `squads and friends are kept apart in the same file`() = runTest {
         val squads = SquadsStore(dataStore)
         val friends = FriendsStore(dataStore)
-        squads.toggle("[CB]")
+        squads.add("[CB]")
         friends.toggle("Bob")
         assertEquals(setOf("[CB]"), squads.squads.first())
         assertEquals(setOf("Bob"), friends.friends.first())

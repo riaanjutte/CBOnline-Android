@@ -33,18 +33,21 @@ class PilotStatsApi(
                 pvp.cancel()
                 return@coroutineScope StatsResult.NotFound
             }
-            StatsResult.Found(row.toModel(nickname, lifetime.top.orEmpty(), pvp.await()))
+            val pvpAnswer = pvp.await()
+            StatsResult.Found(row.toModel(nickname, lifetime.top.orEmpty(), pvpAnswer.record), complete = !pvpAnswer.failed)
         }
     }
 
-    /** The PvP record is extra: missing or failing, it just leaves that part out. */
-    private fun fetchPvp(nickname: String): PvpRecord? = try {
-        json.decodeFromString<PvpDto>(get("PvpStats", nickname)).toModel()
+    private class PvpAnswer(val record: PvpRecord?, val failed: Boolean)
+
+    /** The PvP record is extra: missing or failing, it just leaves that part out (and a failure isn't kept). */
+    private fun fetchPvp(nickname: String): PvpAnswer = try {
+        PvpAnswer(json.decodeFromString<PvpDto>(get("PvpStats", nickname)).toModel(), failed = false)
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
         log("PvP stats unavailable: ${e.message}")
-        null
+        PvpAnswer(null, failed = true)
     }
 
     private fun get(endpoint: String, nickname: String): String {

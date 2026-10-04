@@ -51,7 +51,7 @@ private fun loaded(
 
 @Composable
 private fun Preview(state: RosterUiState) = CbOnlineTheme {
-    RosterScreen(state, "1.0.0", onRefresh = {}, onToggleFriend = {}, onToggleSquad = {}, onOpenStats = {}, onDismissUpdate = {}, onOpenUrl = {})
+    RosterScreen(state, "1.0.0", onRefresh = {}, onToggleFriend = {}, onUnstarSquad = {}, onOpenStats = {}, onDismissUpdate = {}, onOpenUrl = {})
 }
 
 @Preview(showBackground = true)
@@ -89,7 +89,7 @@ private fun RefreshFailedPreview() = Preview(loaded().copy(refreshFailed = true)
 
 @Preview(showBackground = true)
 @Composable
-private fun ErrorPreview() = Preview(RosterUiState(isLoading = false, errorMessage = "HTTP 503"))
+private fun ErrorPreview() = Preview(RosterUiState(isLoading = false, loadError = LoadError.Server(503)))
 
 @Preview(showBackground = true)
 @Composable
@@ -103,7 +103,7 @@ private fun LongMissionNamePreview() = Preview(
 
 @Preview(showBackground = true)
 @Composable
-private fun ErrorWithMissionPreview() = Preview(RosterUiState(isLoading = false, errorMessage = "HTTP 503", mission = sampleMission()))
+private fun ErrorWithMissionPreview() = Preview(RosterUiState(isLoading = false, loadError = LoadError.Server(503), mission = sampleMission()))
 
 @Preview(showBackground = true, widthDp = 360)
 @Composable

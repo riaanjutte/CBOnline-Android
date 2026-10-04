@@ -61,12 +61,12 @@ fun RosterScreen(
     versionName: String,
     onRefresh: () -> Unit,
     onToggleFriend: (String) -> Unit,
-    onToggleSquad: (String) -> Unit,
+    onUnstarSquad: (String) -> Unit,
     onOpenStats: (String) -> Unit,
     onDismissUpdate: () -> Unit,
     onOpenUrl: (String) -> Unit
 ) {
-    val actions = RowActions(onToggleFriend, onToggleSquad, onOpenStats)
+    val actions = RowActions(onToggleFriend, onUnstarSquad, onOpenStats)
     Box(Modifier.fillMaxSize()) {
         MapBackground()
         // Without a Scaffold, keep content clear of side navigation bars and cutouts in landscape;
@@ -94,7 +94,7 @@ fun RosterScreen(
                                 if (state.isLoading) {
                                     CircularProgressIndicator(color = CbColors.Amber)
                                 } else {
-                                    LoadError(state.errorMessage, onRefresh)
+                                    LoadErrorMessage(state.loadError, onRefresh)
                                 }
                             }
                         }
@@ -108,12 +108,18 @@ fun RosterScreen(
 /** What a tap on a row can do. */
 private class RowActions(
     val toggleFriend: (String) -> Unit,
-    val toggleSquad: (String) -> Unit,
+    val unstarSquad: (String) -> Unit,
     val openStats: (String) -> Unit
 )
 
 @Composable
-private fun LoadError(detail: String?, onRetry: () -> Unit) {
+private fun LoadErrorMessage(error: LoadError?, onRetry: () -> Unit) {
+    val detail = when (error) {
+        LoadError.Offline -> stringResource(R.string.load_error_offline)
+        is LoadError.Server -> stringResource(R.string.load_error_server, error.httpCode)
+        LoadError.Other -> stringResource(R.string.load_error_other)
+        null -> null
+    }
     Column(
         modifier = Modifier.fillMaxWidth().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
@@ -219,7 +225,7 @@ private fun ColumnScope.RosterItems(
                 )
             }
             itemsIndexed(roster.squadsOffline, key = { i, tag -> "squads-offline:$i:$tag" }) { i, tag ->
-                OfflineSquadRow(tag, onUnstar = { actions.toggleSquad(tag) }, modifier = Modifier.panelSegment(pos[online + offline + i + 1]))
+                OfflineSquadRow(tag, onUnstar = { actions.unstarSquad(tag) }, modifier = Modifier.panelSegment(pos[online + offline + i + 1]))
             }
             item(key = "gap:friends") { Spacer(Modifier.height(10.dp)) }
         }

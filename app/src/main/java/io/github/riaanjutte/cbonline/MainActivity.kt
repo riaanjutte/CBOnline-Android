@@ -54,14 +54,17 @@ class MainActivity : ComponentActivity() {
                     versionName = BuildConfig.VERSION_NAME,
                     onRefresh = vm::refresh,
                     onToggleFriend = vm::toggleFriend,
-                    onToggleSquad = vm::toggleSquad,
+                    onUnstarSquad = vm::unstarSquad,
                     onOpenStats = statsVm::open,
                     onDismissUpdate = vm::dismissUpdate,
                     // No browser installed is the only failure; nothing useful to show for it
                     onOpenUrl = { runCatching { startActivity(Intent(Intent.ACTION_VIEW, it.toUri())) } }
                 )
                 if (stats != StatsUiState.Hidden) {
-                    PilotStatsSheet(stats, state.squads, onRetry = statsVm::retry, onToggleSquad = vm::toggleSquad, onClose = statsVm::close)
+                    PilotStatsSheet(
+                        stats, state.squads,
+                        onRetry = statsVm::retry, onStarSquad = vm::starSquad, onUnstarSquad = vm::unstarSquad, onClose = statsVm::close
+                    )
                 }
             }
         }

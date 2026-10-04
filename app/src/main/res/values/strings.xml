@@ -11,6 +11,9 @@
     <string name="nobody_flying">Nobody\'s flying right now.</string>
     <string name="refresh_failed">Couldn\'t refresh — showing %1$s</string>
     <string name="load_failed">Couldn\'t load players</string>
+    <string name="load_error_offline">Couldn\'t reach Combat Box. Check your internet connection.</string>
+    <string name="load_error_server">Combat Box didn\'t answer (HTTP %1$d).</string>
+    <string name="load_error_other">Something went wrong.</string>
     <string name="retry">Retry</string>
     <string name="update_available">Version %1$s available</string>
     <string name="download">Download</string>
@@ -38,7 +41,7 @@
     <string name="stats_air_kills">Air kills</string>
     <string name="stats_ground_kills">Ground kills</string>
     <string name="stats_best_streak">Best streak %1$s</string>
-    <string name="stats_deaths">Deaths</string>
+    <string name="stats_deaths">Deaths and captures</string>
     <string name="stats_aircraft_lost">Aircraft lost</string>
     <string name="stats_kills_per_loss">Air kills per aircraft lost</string>
     <string name="stats_kills_per_hour">Air kills per hour</string>
@@ -47,8 +50,20 @@
     <string name="stats_top_aircraft">Top aircraft</string>
     <string name="stats_hours">%1$s h</string>
     <string name="stats_vs_players">Against players</string>
-    <string name="stats_pvp_line">%1$s victories · %2$s defeats · air-to-air win/loss %3$s</string>
-    <string name="stats_ai_victories">%1$s victories against AI</string>
+    <string name="stats_pvp_line">%1$s · %2$s · air-to-air win/loss %3$s</string>
+    <plurals name="stats_victories">
+        <item quantity="one">%1$s victory</item>
+        <item quantity="other">%1$s victories</item>
+    </plurals>
+    <plurals name="stats_defeats">
+        <item quantity="one">%1$s defeat</item>
+        <item quantity="other">%1$s defeats</item>
+    </plurals>
+    <plurals name="stats_ai_victories">
+        <item quantity="one">%1$s victory against AI</item>
+        <item quantity="other">%1$s victories against AI</item>
+    </plurals>
+    <string name="stats_loading">Loading stats</string>
     <string name="stats_not_found">No stats found for this pilot.</string>
     <string name="stats_failed">Couldn\'t load stats</string>
 

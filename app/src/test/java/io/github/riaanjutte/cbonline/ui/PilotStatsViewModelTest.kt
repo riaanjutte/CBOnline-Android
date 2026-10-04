@@ -77,6 +77,16 @@ class PilotStatsViewModelTest {
     }
 
     @Test
+    fun `an answer missing its PvP part because that request failed isn't kept`() = runTest {
+        source.answer = { StatsResult.Found(stats(it), complete = false) }
+        vm.open("Hans"); runCurrent()
+        assertEquals(StatsUiState.Loaded("Hans", stats("Hans")), vm.state.value)
+        vm.close()
+        vm.open("Hans"); runCurrent()
+        assertEquals(2, source.calls.size)
+    }
+
+    @Test
     fun `opening another pilot drops the first one's late answer`() = runTest {
         source.gates["Slow"] = CompletableDeferred()
         vm.open("Slow"); runCurrent()

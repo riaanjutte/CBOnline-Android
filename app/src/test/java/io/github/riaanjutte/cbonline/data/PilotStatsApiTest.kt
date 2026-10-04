@@ -111,9 +111,17 @@ class PilotStatsApiTest {
     }
 
     @Test
-    fun `a failing PvP request leaves the rest`() = runTest {
+    fun `a failing PvP request leaves the rest, marked incomplete`() = runTest {
         pvp = MockResponse().setResponseCode(500)
-        assertNull(found().vsPlayers)
+        val result = api.fetch("Hans") as StatsResult.Found
+        assertNull(result.stats.vsPlayers)
+        assertEquals(false, result.complete)
+    }
+
+    @Test
+    fun `missing PvP stats are a complete answer`() = runTest {
+        pvp = MockResponse().setBody("""{"message":"No PvP stats found for player: 'Hans'."}""")
+        assertEquals(true, (api.fetch("Hans") as StatsResult.Found).complete)
     }
 
     @Test

@@ -37,5 +37,23 @@ internal class StarredNames(private val dataStore: DataStore<Preferences>, keyNa
         }
     }
 
+    /** Adds the trimmed name unless a matching spelling is already stored. */
+    suspend fun add(name: String) {
+        val wanted = normalise(name)
+        dataStore.edit { prefs ->
+            val current = prefs[key] ?: emptySet()
+            if (current.none { normalise(it) == wanted }) prefs[key] = current + name.trim()
+        }
+    }
+
+    /** Removes the stored spelling that matches the name, if any. */
+    suspend fun remove(name: String) {
+        val wanted = normalise(name)
+        dataStore.edit { prefs ->
+            val current = prefs[key] ?: emptySet()
+            prefs[key] = current.filterNot { normalise(it) == wanted }.toSet()
+        }
+    }
+
     private fun normalise(name: String) = name.trim().lowercase(Locale.ROOT)
 }

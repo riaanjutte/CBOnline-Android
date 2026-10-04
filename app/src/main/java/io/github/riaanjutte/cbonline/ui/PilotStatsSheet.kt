@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -35,7 +38,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.riaanjutte.cbonline.R
@@ -47,7 +55,6 @@ import io.github.riaanjutte.cbonline.roster.tidyAircraftName
 import io.github.riaanjutte.cbonline.ui.brand.BrandLabel
 import io.github.riaanjutte.cbonline.ui.theme.CbColors
 import io.github.riaanjutte.cbonline.ui.theme.CbText
-
 import java.util.Locale
 
 /** A pilot's stats, sliding up over the roster; [state] must not be [StatsUiState.Hidden]. */
@@ -57,7 +64,8 @@ fun PilotStatsSheet(
     state: StatsUiState,
     starredSquads: Set<String>,
     onRetry: () -> Unit,
-    onToggleSquad: (String) -> Unit,
+    onStarSquad: (String) -> Unit,
+    onUnstarSquad: (String) -> Unit,
     onClose: () -> Unit
 ) {
     val nickname = when (state) {
@@ -70,16 +78,24 @@ fun PilotStatsSheet(
     ModalBottomSheet(
         onDismissRequest = onClose,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = CbColors.Panel
+        containerColor = CbColors.Panel,
+        // A tall sheet (landscape) would otherwise slide up under the status bar
+        modifier = Modifier.statusBarsPadding()
     ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(nickname, style = CbText.Countdown, color = CbColors.Text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(
+                nickname, style = CbText.Countdown, color = CbColors.Text, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.semantics { heading() }
+            )
             when (state) {
-                is StatsUiState.Loading -> Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = CbColors.Amber)
+                is StatsUiState.Loading -> {
+                    val loading = stringResource(R.string.stats_loading)
+                    Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = CbColors.Amber, modifier = Modifier.semantics { contentDescription = loading })
+                    }
                 }
                 is StatsUiState.Loaded -> StatsContent(state.stats)
                 is StatsUiState.NotFound -> Text(stringResource(R.string.stats_not_found), style = MaterialTheme.typography.bodyMedium, color = CbColors.Muted)
@@ -93,7 +109,7 @@ fun PilotStatsSheet(
                 StatsUiState.Hidden -> Unit
             }
             HorizontalDivider(color = CbColors.PanelBorder)
-            SquadButton(nickname, starredSquads, onToggleSquad)
+            SquadButton(nickname, starredSquads, onStarSquad, onUnstarSquad)
         }
     }
 }
@@ -154,12 +170,17 @@ private fun StatsContent(stats: PilotStats) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 BrandLabel(stringResource(R.string.stats_vs_players))
                 Text(
-                    stringResource(R.string.stats_pvp_line, fmt.whole(pvp.victories), fmt.whole(pvp.defeats), fmt.twoDecimals(pvp.airToAirRatio)),
+                    stringResource(
+                        R.string.stats_pvp_line,
+                        pluralStringResource(R.plurals.stats_victories, pvp.victories, fmt.whole(pvp.victories)),
+                        pluralStringResource(R.plurals.stats_defeats, pvp.defeats, fmt.whole(pvp.defeats)),
+                        fmt.twoDecimals(pvp.airToAirRatio)
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = CbColors.Text
                 )
                 Text(
-                    stringResource(R.string.stats_ai_victories, fmt.whole(pvp.aiVictories)),
+                    pluralStringResource(R.plurals.stats_ai_victories, pvp.aiVictories, fmt.whole(pvp.aiVictories)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = CbColors.Muted
                 )
@@ -190,7 +211,7 @@ private fun StatCell(stat: Stat, modifier: Modifier) {
 
 /** Unstar the starred squad this pilot belongs to, or star one, starting from the tag in their name. */
 @Composable
-private fun SquadButton(nickname: String, starredSquads: Set<String>, onToggleSquad: (String) -> Unit) {
+private fun SquadButton(nickname: String, starredSquads: Set<String>, onStar: (String) -> Unit, onUnstar: (String) -> Unit) {
     var dialogOpen by rememberSaveable(nickname) { mutableStateOf(false) }
     val member = starredSquads.sortedWith(String.CASE_INSENSITIVE_ORDER).firstOrNull { isSquadMember(nickname, it) }
     val suggestion = suggestSquadTag(nickname)
@@ -200,7 +221,7 @@ private fun SquadButton(nickname: String, starredSquads: Set<String>, onToggleSq
         else -> stringResource(R.string.squad_star)
     }
     OutlinedButton(
-        onClick = { if (member != null) onToggleSquad(member) else dialogOpen = true },
+        onClick = { if (member != null) onUnstar(member) else dialogOpen = true },
         border = BorderStroke(1.dp, CbColors.Amber),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -209,7 +230,7 @@ private fun SquadButton(nickname: String, starredSquads: Set<String>, onToggleSq
     if (dialogOpen) {
         SquadDialog(
             initial = suggestion.orEmpty(),
-            onConfirm = { onToggleSquad(it.trim()); dialogOpen = false },
+            onConfirm = { onStar(it.trim()); dialogOpen = false },
             onDismiss = { dialogOpen = false }
         )
     }
@@ -230,9 +251,14 @@ private fun SquadDialog(initial: String, onConfirm: (String) -> Unit, onDismiss:
                     onValueChange = { tag = it },
                     label = { Text(stringResource(R.string.squad_dialog_label)) },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { if (isValidSquadTag(tag)) onConfirm(tag) }),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = CbColors.Amber,
                         focusedLabelColor = CbColors.Amber,
+                        // The default unfocused border (outline) is barely visible on the panel
+                        unfocusedBorderColor = CbColors.Muted,
+                        unfocusedLabelColor = CbColors.Muted,
                         cursorColor = CbColors.Amber,
                         focusedTextColor = CbColors.Text,
                         unfocusedTextColor = CbColors.Text

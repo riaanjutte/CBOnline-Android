@@ -129,7 +129,8 @@ fun SectionHeader(title: String, edge: Color, textColor: Color, position: Segmen
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
             .panelSegment(position, opaque = true)
-            .semantics { heading() }
+            // Merged so TalkBack focuses the header itself, which carries the heading flag
+            .semantics(mergeDescendants = true) { heading() }
     ) {
         Box(Modifier.width(3.dp).fillMaxHeight().background(edge))
         Text(

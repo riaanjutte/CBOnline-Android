@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.IOException
 import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -36,13 +37,33 @@ data class RosterUiState(
     /** A refresh failed while older data is still on screen. */
     val refreshFailed: Boolean = false,
     /** Set only when there is no roster to show. */
-    val errorMessage: String? = null,
+    val loadError: LoadError? = null,
     val update: UpdateInfo? = null,
     /** Last good mission info; independent of the roster's error state. */
     val mission: MissionInfo? = null,
     /** Starred squad tags, for the stats panel's Star / Unstar squad button. */
     val squads: Set<String> = emptySet()
 )
+
+/**
+ * Why the first load failed, worded by the screen. Never the exception's own text: that can name the server
+ * ("Unable to resolve host …"), and the app shows no server addresses.
+ */
+sealed interface LoadError {
+    /** No network, the server unreachable, or it took too long. */
+    data object Offline : LoadError
+    data class Server(val httpCode: Int) : LoadError
+    data object Other : LoadError
+
+    companion object {
+        private val HTTP = Regex("""^HTTP (\d{3})$""")
+
+        fun from(e: Throwable): LoadError = when {
+            e is IOException -> e.message?.let { HTTP.matchEntire(it) }?.let { Server(it.groupValues[1].toInt()) } ?: Offline
+            else -> Other
+        }
+    }
+}
 
 class RosterViewModel(
     private val players: PlayersSource,
@@ -61,7 +82,7 @@ class RosterViewModel(
         val isLoading: Boolean = true,
         val isRefreshing: Boolean = false,
         val refreshFailed: Boolean = false,
-        val errorMessage: String? = null
+        val loadError: LoadError? = null
     )
 
     private val fetchState = MutableStateFlow(FetchState())
@@ -90,8 +111,12 @@ class RosterViewModel(
         viewModelScope.launch { persist("Saving friend failed") { friends.toggle(nickname) } }
     }
 
-    fun toggleSquad(tag: String) {
-        viewModelScope.launch { persist("Saving squad failed") { squads.toggle(tag) } }
+    fun starSquad(tag: String) {
+        viewModelScope.launch { persist("Saving squad failed") { squads.add(tag) } }
+    }
+
+    fun unstarSquad(tag: String) {
+        viewModelScope.launch { persist("Saving squad failed") { squads.remove(tag) } }
     }
 
     fun dismissUpdate() {
@@ -140,7 +165,7 @@ class RosterViewModel(
         try {
             val result = players.fetch()
             fetchState.update {
-                it.copy(players = result, lastUpdated = Instant.now(), isLoading = false, refreshFailed = false, errorMessage = null)
+                it.copy(players = result, lastUpdated = Instant.now(), isLoading = false, refreshFailed = false, loadError = null)
             }
             if (!updateChecked) {
                 updateChecked = true
@@ -151,7 +176,7 @@ class RosterViewModel(
         } catch (e: Exception) {
             fetchState.update {
                 if (it.players != null) it.copy(isLoading = false, refreshFailed = true)
-                else it.copy(isLoading = false, errorMessage = e.message ?: e::class.simpleName)
+                else it.copy(isLoading = false, loadError = LoadError.from(e))
             }
         }
     }
@@ -169,7 +194,7 @@ class RosterViewModel(
         isLoading = fetch.isLoading,
         isRefreshing = fetch.isRefreshing,
         refreshFailed = fetch.refreshFailed,
-        errorMessage = fetch.errorMessage,
+        loadError = fetch.loadError,
         update = update,
         mission = mission
     )

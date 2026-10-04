@@ -26,7 +26,8 @@ data class AircraftHours(val name: String, val hours: Double)
 data class PvpRecord(val victories: Int, val defeats: Int, val airToAirRatio: Double, val aiVictories: Int)
 
 sealed interface StatsResult {
-    data class Found(val stats: PilotStats) : StatsResult
+    /** [complete] is false when the PvP part is missing because its request failed, rather than not existing. */
+    data class Found(val stats: PilotStats, val complete: Boolean = true) : StatsResult
     /** Combat Box has no stats under this name (new pilot, or a name that changed). */
     data object NotFound : StatsResult
 }

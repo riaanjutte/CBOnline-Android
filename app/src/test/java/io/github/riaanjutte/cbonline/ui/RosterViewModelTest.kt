@@ -26,6 +26,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.io.IOException
+import java.io.InterruptedIOException
+import java.net.ConnectException
+import java.net.UnknownHostException
 import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -82,9 +85,13 @@ class RosterViewModelTest {
     private class FakeSquads : SquadsRepository {
         override val squads = MutableStateFlow(emptySet<String>())
         var failWrites = false
-        override suspend fun toggle(tag: String) {
+        override suspend fun add(tag: String) {
             if (failWrites) throw IOException("disk full")
-            squads.value = if (tag in squads.value) squads.value - tag else squads.value + tag
+            squads.value = squads.value + tag
+        }
+        override suspend fun remove(tag: String) {
+            if (failWrites) throw IOException("disk full")
+            squads.value = squads.value - tag
         }
     }
 
@@ -100,12 +107,25 @@ class RosterViewModelTest {
         players.next = { listOf(OnlinePlayer("=JG52=Hans", Coalition.Axis, "00:10"), OnlinePlayer("Bob", Coalition.Allied, "00:10")) }
         val vm = vm()
         subscribe(vm)
-        vm.toggleSquad("=JG52=")
+        vm.starSquad("=JG52=")
         runCurrent()
         val roster = vm.state.value.roster!!
         assertEquals(listOf("=JG52=Hans"), roster.friendsOnline.map { it.nickname })
         assertEquals(setOf("=JG52="), vm.state.value.squads)
         assertEquals(1, players.calls)
+    }
+
+    @Test
+    fun `starring a squad twice keeps it, and only unstar removes it`() = runTest {
+        val vm = vm()
+        subscribe(vm)
+        vm.starSquad("=JG52=")
+        vm.starSquad("=JG52=")
+        runCurrent()
+        assertEquals(setOf("=JG52="), vm.state.value.squads)
+        vm.unstarSquad("=JG52=")
+        runCurrent()
+        assertEquals(emptySet<String>(), vm.state.value.squads)
     }
 
     @Test
@@ -121,7 +141,7 @@ class RosterViewModelTest {
         squads.failWrites = true
         val vm = vm()
         subscribe(vm)
-        vm.toggleSquad("[CB]")
+        vm.starSquad("[CB]")
         runCurrent()
         assertEquals(emptySet<String>(), vm.state.value.squads)
     }
@@ -147,8 +167,35 @@ class RosterViewModelTest {
         subscribe(vm)
         val s = vm.state.value
         assertNull(s.roster)
-        assertEquals("HTTP 503", s.errorMessage)
+        assertEquals(LoadError.Server(503), s.loadError)
         assertFalse(s.isLoading)
+    }
+
+    @Test
+    fun `no network shows as offline, without the server's address`() = runTest {
+        players.next = { throw UnknownHostException("Unable to resolve host \"il2statsapi.combatbox.net\": No address associated with hostname") }
+        val vm = vm()
+        subscribe(vm)
+        assertEquals(LoadError.Offline, vm.state.value.loadError)
+        assertFalse(vm.state.value.toString().contains("combatbox"))
+    }
+
+    @Test
+    fun `a timeout or refused connection is offline too`() = runTest {
+        for (e in listOf(InterruptedIOException("timeout"), ConnectException("Failed to connect to il2statsapi.combatbox.net/1.2.3.4:443"))) {
+            players.next = { throw e }
+            val vm = vm()
+            subscribe(vm)
+            assertEquals(e.toString(), LoadError.Offline, vm.state.value.loadError)
+        }
+    }
+
+    @Test
+    fun `an unexpected answer is a generic error`() = runTest {
+        players.next = { throw IllegalArgumentException("Unexpected JSON token at offset 0: <html>") }
+        val vm = vm()
+        subscribe(vm)
+        assertEquals(LoadError.Other, vm.state.value.loadError)
     }
 
     @Test
@@ -159,7 +206,7 @@ class RosterViewModelTest {
         advanceTimeBy(60_001)
         assertEquals(2, vm.state.value.roster!!.total)
         assertTrue(vm.state.value.refreshFailed)
-        assertNull(vm.state.value.errorMessage)
+        assertNull(vm.state.value.loadError)
 
         players.next = { TWO_PLAYERS }
         advanceTimeBy(60_001)
@@ -314,7 +361,7 @@ class RosterViewModelTest {
         assertEquals(MISSION_A, s.mission)
         assertEquals(2, s.roster!!.total)
         assertFalse(s.refreshFailed)
-        assertNull(s.errorMessage)
+        assertNull(s.loadError)
     }
 
     @Test
@@ -335,7 +382,7 @@ class RosterViewModelTest {
         val s = vm.state.value
         assertEquals(2, s.roster!!.total)
         assertNull(s.mission)
-        assertNull(s.errorMessage)
+        assertNull(s.loadError)
         assertFalse(s.isLoading)
     }
 
@@ -344,7 +391,7 @@ class RosterViewModelTest {
         players.next = { throw IOException("HTTP 503") }
         val vm = vm()
         subscribe(vm)
-        assertEquals("HTTP 503", vm.state.value.errorMessage)
+        assertEquals(LoadError.Server(503), vm.state.value.loadError)
         assertEquals(MISSION_A, vm.state.value.mission)
     }
 

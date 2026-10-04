@@ -23,7 +23,10 @@ sealed interface StatsUiState {
     data class Failed(val nickname: String) : StatsUiState
 }
 
-/** Opens one pilot's stats at a time. Answers are kept for the session; failures aren't, so Retry fetches again. */
+/**
+ * Opens one pilot's stats at a time. Answers are kept for the session; failures aren't (including a missing PvP
+ * part that failed to load), so opening the pilot again or Retry fetches again.
+ */
 class PilotStatsViewModel(private val source: StatsSource) : ViewModel() {
 
     private val _state = MutableStateFlow<StatsUiState>(StatsUiState.Hidden)
@@ -42,7 +45,9 @@ class PilotStatsViewModel(private val source: StatsSource) : ViewModel() {
         _state.value = StatsUiState.Loading(nickname)
         job = viewModelScope.launch {
             _state.value = try {
-                source.fetch(nickname).also { cache[key] = it }.toUiState(nickname)
+                source.fetch(nickname)
+                    .also { if (it !is StatsResult.Found || it.complete) cache[key] = it }
+                    .toUiState(nickname)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
