@@ -23,6 +23,8 @@ See who's flying on [Combat Box](https://combatbox.net) (IL-2 Great Battles) bef
 - **Pilot stats.** Tap any pilot to see their lifetime record: flight hours, kills and best streaks, their most-flown aircraft, and how they do against other players.
 - **Squads.** In a pilot's stats, star their squad tag (like =JG52=), and everyone online with that tag shows under Friends too.
 - **Fresh data.** The app refreshes every minute while it's open. Pull down to refresh straight away.
+- **Mission reminder.** Tap the bell next to the next mission, and you get a notification 10 minutes before it starts.
+- **Friend alerts.** Switch them on in the ⋮ menu to get a notification when starred pilots or squad members come online, even with the app closed. It checks about every 15 minutes, sometimes later when your phone is idle.
 - **Update notices.** The app tells you when a new version is out.
 
 ## Installing
@@ -63,7 +65,7 @@ When a new version is published, a notice appears at the top of the app: *Versio
 ## Questions
 
 **Does it run in the background or drain my battery?**
-No. It only refreshes while it's on screen and stops when you leave it. It never sends notifications.
+Only if you switch on friend alerts. Then it checks Combat Box about every 15 minutes in the background, with one small request each time. Otherwise it only refreshes while it's on screen. It only sends the notifications you switch on: a mission reminder or friend alerts.
 
 **Do I need an account?**
 No. There's nothing to sign in to, and the only access the app needs is to the internet.
