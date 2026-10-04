@@ -30,6 +30,7 @@ android {
         targetSdk = 35
         versionName = appVersion
         versionCode = vMajor * 10000 + vMinor * 100 + vPatch
+        manifestPlaceholders["appLabel"] = "CB Online"
     }
 
     signingConfigs {
@@ -44,6 +45,9 @@ android {
 
     buildTypes {
         debug {
+            // Own app ID and launcher name, so a dev build installs next to the released app
+            applicationIdSuffix = ".debug"
+            manifestPlaceholders["appLabel"] = "CB Online (dev)"
             buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
             buildConfigField("String", "MISSION_URL", "\"$debugMissionUrl\"")
         }

@@ -6,7 +6,7 @@
     <application
         android:name=".CbOnlineApp"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="${appLabel}"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.CbOnline">
         <activity
