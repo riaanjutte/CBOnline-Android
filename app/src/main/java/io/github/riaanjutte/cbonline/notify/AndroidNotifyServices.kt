@@ -46,7 +46,14 @@ class AlarmReminderAlarms(private val context: Context) : ReminderAlarms {
         }
     }
 
-    override fun cancel() = alarmManager.cancel(intent(null))
+    /** Looked up without creating it: with no reminder set there's nothing to cancel, and nothing is left behind. */
+    override fun cancel() {
+        val pending = PendingIntent.getBroadcast(
+            context, 0, reminderIntent(), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
+        ) ?: return
+        alarmManager.cancel(pending)
+        pending.cancel()
+    }
 
     companion object {
         /** True when exact alarms need the user to switch on "Alarms & reminders" first (Android 12+). */
@@ -58,11 +65,11 @@ class AlarmReminderAlarms(private val context: Context) : ReminderAlarms {
     }
 
     /** Extras don't take part in matching, so one request code and action always mean "the" reminder. */
-    private fun intent(r: MissionReminder?): PendingIntent = PendingIntent.getBroadcast(
+    private fun reminderIntent() = Intent(context, ReminderReceiver::class.java).setAction(ACTION_REMIND)
+
+    private fun intent(r: MissionReminder): PendingIntent = PendingIntent.getBroadcast(
         context, 0,
-        Intent(context, ReminderReceiver::class.java).setAction(ACTION_REMIND).apply {
-            r?.let { putExtra(EXTRA_NAME, it.missionName); putExtra(EXTRA_START, it.start.toEpochMilli()) }
-        },
+        reminderIntent().putExtra(EXTRA_NAME, r.missionName).putExtra(EXTRA_START, r.start.toEpochMilli()),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     )
 }
