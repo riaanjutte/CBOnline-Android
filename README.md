@@ -7,7 +7,7 @@ See who's flying on [Combat Box](https://combatbox.net) (IL-2 Great Battles) bef
 **[Download the latest version](https://github.com/riaanjutte/CBOnline-Android/releases/latest)** · Android 8.0 or newer · free
 
 <p align="center">
-  <img src="site/screenshots/main.png" width="250" alt="Main screen: the current mission and its time left, the next mission, 25 pilots online split by side, and the Axis list">
+  <img src="site/screenshots/main.png" width="250" alt="Main screen: the current mission and its time left, the next mission with its reminder bell set, 25 pilots online split by side, and the Axis list">
   <img src="site/screenshots/lists.png" width="250" alt="Two starred friends pinned in a Friends section above the Axis list">
   <img src="site/screenshots/stats.png" width="250" alt="A pilot's stats: lifetime flight hours, kills and best streaks, most-flown aircraft, and their record against other players">
 </p>
@@ -68,7 +68,7 @@ When a new version is published, a notice appears at the top of the app: *Versio
 Only if you switch on friend alerts. Then Android runs a check about every 15 minutes in the background (less often while your phone is asleep), with one small request each time. Otherwise it only refreshes while it's on screen. It only sends the notifications you switch on: a mission reminder or friend alerts.
 
 **Do I need an account?**
-No. There's nothing to sign in to. The app needs internet access, plus permission to show notifications (and to set alarms, for on-time reminders) if you switch on a reminder or friend alerts.
+No. There's nothing to sign in to. The only permissions the app asks for are to show notifications (and to set alarms, for on-time reminders), and only when you switch on a reminder or friend alerts.
 
 **What does it send or collect?**
 Nothing about you. It reads Combat Box's public player and mission data and asks GitHub whether there's a newer version. Your starred friends and squads are stored only on your phone.
